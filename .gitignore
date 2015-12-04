@@ -1,0 +1,5 @@
+/uploads/
+/app/
+/node_modules/
+*~
+*.swp
