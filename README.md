@@ -11,9 +11,9 @@ The server side of the liquid-IoT project which is developed in Tampere universi
 
 This project is a nodejs application:
 
-1- Clone the project. 'clone '
+1- Clone the project. 'git clone https://github.com/farshadahmadi/liquidiot-server.git'
 
-2- Go to the project directory you have just cloned. 'cd '
+2- Go to the project directory you have just cloned. 'cd liquidiot-server'
 
 3- Install needed dependencies. 'npm install'
 
