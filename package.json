@@ -1,0 +1,27 @@
+{
+  "name": "agent_server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "manager_server.js",
+  "scripts": {
+    "start": "node manager_server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.13.3",
+    "fs.extra": "^1.3.2",
+    "multer": "^1.1.0",
+    "ncp": "^2.0.0",
+    "path": "^0.12.7",
+    "portscanner": "^1.0.0",
+    "request": "^2.65.0",
+    "rimraf": "^2.4.3",
+    "routes": "^2.1.0",
+    "tar": "^2.2.1",
+    "tar-fs": "^1.8.1",
+    "tar.gz": "^1.0.2",
+    "tree-kill": "^1.0.0"
+  }
+}
