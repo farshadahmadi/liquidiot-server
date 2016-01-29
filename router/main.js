@@ -62,24 +62,42 @@ module.exports = function(app) {
 
   });
 
+  app.use("/app/:aid/instance/:iid/api", function(req, res){
+    var aid = parseInt(req.params.aid);
+    var iid = parseInt(req.params.iid);
+    console.log("reqUrl " + req.url);
+    var url = "http://localhost:" + ports[iid] + req.url;
+    console.log(url);
+    req.pipe(request(url)).pipe(res);
+  });
+
 ///////////////////////////////////////////////////////////////////
 ////////////// app Related Functions - START //////////////////////
 ///////////////////////////////////////////////////////////////////
 
+  // This method is called for deployment of application. The application should be packed
+  // in tarball in .tgz format.
   app.post("/app", upload.single("filekey"), function(req, res) {
+    // creating the specific id for application
     var aid = ((new Date()).getTime()) % 1000000;
     installApp(req, aid, function(err, appDescr){
       if(err) {
         res.status(500).send(err.toString());
       } else {
-        //var aid = appDescr.id;
         appDescr.id = aid;
-        appDescr.instances = [];
+        //appDescr.instances = [];
         apps.push(appDescr);
-        //appIds.push(aid);
-        //instancesOfApp[aid] = [];
-        //npmInstallInfoOfApp[aid] = {status:"finished"};
-        res.status(200).send(aid.toString());
+        console.log("1.appDescr: " + JSON.stringify(appDescr));
+          instanciate(appDescr, function(err){
+            if(err) {
+              // we should delete the initializing instace from the app instances list
+              res.status(500).send(err.toString());
+            } else {
+              //res.status(200).send(iid.toString());
+              res.status(200).send(JSON.stringify(appDescr));
+
+            }
+          });
       }
     });
   });
@@ -266,7 +284,7 @@ module.exports = function(app) {
     } else {
       for(var i in apps) {
         //console.log(apps[i].id);
-        deleteApp(apps[i].id, function(err){
+        deleteApp(apps[i], function(err){
           if(err) {
            callback(err);
           } else {
@@ -291,158 +309,44 @@ module.exports = function(app) {
 ////////////// Specific app Related Functions - START /////////////
 ///////////////////////////////////////////////////////////////////
 
-  app.delete("/app/:aid", function(req, res){
-    var aid = parseInt(req.params.aid);
-    //if(isApp(aid)) {
-      deleteApp(aid, function(err){
-        if(err) {
-          res.status(500).send(err.toString());
-        } else {
-          res.status(200).send("app is deleted.");
-        }
-      });
-  });
-
-  function deleteApp(aid, callback) {
-    var appDir = "./app/" + aid + "/";
-
-    getAppDescr(aid, function(err, appDescr){
-        if(err){
-            callback(err);
-        } else {
-            getInstancesOfApp(aid, function(err, instances){
-                if(err){
-                    callback(err);
-                } else {
-                    if(instances.length == 0) {
-                          rimraf(appDir, function(err){
-                            if(err) {
-                              callback(err);
-                            } else {
-                                apps.splice(apps.indexOf(appDescr), 1);
-                              //appIds.splice(appIds.indexOf(aid), 1);
-                              //delete instancesOfApp[aid];
-                                callback();
-                            }
-                          });
-                    } else {
-                          for(var i in instances) {
-                            deleteInstanceServer(aid, instances[i].id, instances[i], function(err){
-                              if(err) {
-                                callback(err);
-                              } else {
-                                if(instances.length === 0) {
-                                  rimraf(appDir, function(err){
-                                    if(err) {
-                                      callback(err);
-                                    } else {
-                                      apps.splice(apps.indexOf(appDescr), 1);
-                                      //delete instancesOfApp[aid];
-                                      callback();
-                                    }
-                                  });
-                                }
-                              }
-                            });
-                          }
-                   }
-                }
-            });
-        }
-    });
-  }
-
-
   app.post("/app/:aid", upload.single("filekey"), function(req, res){    
     var aid = parseInt(req.params.aid);
-    console.log(aid);
+    //console.log(aid);
     getAppDescr(aid, function(err, appDescr){
         if(err){
             res.status(404).send(err.toString());
         } else {
-            updateApp(req, appDescr, function(err, newAppDescr){
-                if(err){
-                    res.status(500).send(err.toString());
-                } else {
-                    //console.log("app descr: " + JSON.stringify(apps[apps.indexOf(appDescr)]));
-                    //console.log("index: " + apps.indexOf(appDescr));
-                    newAppDescr.id = aid;
-                    newAppDescr.instances = appDescr.instances;
-                    apps[apps.indexOf(appDescr)] = newAppDescr;
-                    //console.log("new app descr: " + JSON.stringify(apps[apps.indexOf(newAppDescr)]));
-                    res.status(200).send("App is updated.");
-                }
-            });
-        }
-    });
-  });
 
-  function updateApp(req, appDescr, callback){
-    var aid = appDescr.id;
-    var appFile = aid + ".js";
-    var appDir = "./app/" + aid + "/";
-
-    cleanAppDir(aid, function(err){
-        if(err){
-            callback(err);
-        } else {
-            installApp(req, aid, function(err, newAppDescr){
+            deleteApp(appDescr, function(err){
               if(err) {
                 callback(err);
               } else {
-                callback(null, newAppDescr);
+
+                    installApp(req, aid, function(err, appDescr){
+                      if(err) {
+                        res.status(500).send(err.toString());
+                      } else {
+                        appDescr.id = aid;
+                        //appDescr.instances = [];
+                        apps.push(appDescr);
+                        console.log("1.appDescr: " + JSON.stringify(appDescr));
+                          instanciate(appDescr, function(err){
+                            if(err) {
+                              // we should delete the initializing instace from the app instances list
+                              res.status(500).send(err.toString());
+                            } else {
+                              //res.status(200).send(iid.toString());
+                              res.status(200).send(JSON.stringify(appDescr));
+
+                            }
+                          });
+                      }
+                    });
               }
             });
         }
     });
-  }
-
-  function cleanAppDir(aid, callback){
-      var appDir = "./app/" + aid + "/";
-      var flags = [];
-      var length = 0;
-      var ctr = 0;
-      fs.readdir(appDir, function(err, files){
-          if(err){
-              callback(err);
-          } else {
-              files.filter(function(file){
-                  return (file !== "instance");
-              }).map(function(file){
-                  flags[length++] = false;
-                  console.log("flags: " + JSON.stringify(flags));
-                  return path.join(appDir, file);
-              }).forEach(function(file){
-                  console.log(file);
-                  rimraf(file, function(err){
-                      if(err){
-                          callback(err);
-                      } else {
-                          flags[ctr++] = true;
-                          console.log("length of files: " + length);
-                          console.log("ctr: " + ctr);
-                          if(ctr == length) {
-                              console.log("yes");
-                              var flag = true;
-                              for(var i in flags){
-                                  if(!flags[i]){
-                                      flag = false;
-                                  }
-                              }
-                              if(flag){
-                                  callback();
-                              } else {
-                                  callback(new Error("Can not update"));
-
-                              }
-                          }
-                      }
-                  });
-
-              });
-          }
-      });
-  }
+  });
 
 ///////////////////////////////////////////////////////////////////
 ////////////// Specific app Related Functions - END ///////////////
@@ -452,27 +356,6 @@ module.exports = function(app) {
 ///////////////////////////////////////////////////////////////////
 ////////////// Instance Related Functions - START /////////////////
 ///////////////////////////////////////////////////////////////////
-
-  app.post("/app/:aid/instance", function(req, res){
-    var aid = parseInt(req.params.aid);
-    getAppDescr(aid, function(err, appDescr){
-        if(err){
-            res.status(404).send(err.toString());
-        } else {
-            console.log("1.appDescr: " + JSON.stringify(appDescr));
-
-            //if(!isNaN(aid)) {
-              instanciate(appDescr, function(err, iid){
-                if(err) {
-                  // we should delete the initializing instace from the app instances list
-                  res.status(500).send(err.toString());
-                } else {
-                  res.status(200).send(iid.toString());
-                }
-              });
-        }
-    });
-  });
 
   function getAppDescr(aid, callback){
       for(var i in apps){
@@ -491,64 +374,31 @@ module.exports = function(app) {
           console.log("before:" + reservedPorts[port]);
           console.log("port: " + port);
         if (reservedPorts[port] === undefined) {
-          var iid = ((new Date()).getTime()) % 1000000;
+          ////var iid = ((new Date()).getTime()) % 1000000;
           reservedPorts[port] = true;
-          ports[iid] = port;
+          ports[aid] = port;
 
           console.log("after: " + reservedPorts[port]);
-
-          //var iid = port;
-          var instanceDir = "./app/" + aid + "/instance/" + iid + "/";
-
-          // performing a deep copy of the appDescr object (otherwise JSON.stringify throws an error)
-          // instance description is almost he same as app description, except some items (id and instaces)
-          var instanceDescr = JSON.parse(JSON.stringify(appDescr));
-          // changing the id of instanse to iid
-          instanceDescr.id = iid;
-          // instance object does not have instaces array, so it should be removed
-          delete instanceDescr.instances;
-          // the instance automatically run after creation, so the status should be initializing
-          instanceDescr.status = "initializing";
-          console.log("instace: " + JSON.stringify(instanceDescr));
-          apps[apps.indexOf(appDescr)].instances.push(instanceDescr);
+          
+          appDescr.status = "initializing";
+          console.log("instace: " + JSON.stringify(appDescr));
 
 
           console.log("2.port:" + port);
-  
-          createInstanceDir(appDescr, iid, function(err) {
+          createAppServerFiles(appDescr, function(err){
             if(err) {
-              //delete reservedPorts[iid];
-              delete reservedPorts[port];
-              delete ports[iid];
-              callback(err);
+              rimraf(instanceDir, function(error){
+                if(error) {
+                  callback(error);
+                } else {
+                  callback(err);
+                }
+                delete reservedPorts[port];
+                delete ports[aid];
+              });
             } else {
-                createInstanceFiles(aid, instanceDescr, iid, function(err){
-                    if(err){
-                        delete reserevedPorts[port];
-                        delete ports[iid];
-                        callback(err);
-                    } else {
-                        //callback(null, iid.toString());
-                        
-                          createInstanceServerFiles(appDescr, iid, function(err){
-                            if(err) {
-                              rimraf(instanceDir, function(error){
-                                if(error) {
-                                  callback(error);
-                                } else {
-                                  callback(err);
-                                }
-                                delete reservedPorts[port];
-                                delete ports[iid];
-                              });
-                            } else {
-                              createInstanceServer(aid, iid, instanceDescr, port);
-                              //instancesOfApp[aid].push(iid);
-                              callback(null, iid.toString());
-                            }
-                          });
-                    }
-                });
+              createAppServer(aid, appDescr, port);
+              callback(null);
             }
           });
         } else {
@@ -560,123 +410,27 @@ module.exports = function(app) {
     });
   }
 
-  function createInstanceDir(appDescr, iid, callback){
-    var aid = appDescr.id;
-    var instancesDir = "./app/" + aid + "/instance/";
-    var instanceDir = "./app/" + aid + "/instance/" + iid + "/";
-    var appDir = "./app/" + aid + "/";
-    //var appName = aid + ".js";
-    var appName = appDescr.main;
-
-    var files = [{srcFolder:appDir, srcFile:appName, desFolder:instanceDir, desFile:"start_agent_test.js"},
-                 {srcFolder:templatesDir, srcFile:"agent.js", desFolder:instanceDir, desFile:"agent.js"}];
-
-    fs.mkdir(instancesDir , function(err){
-      if(!err || (err && err.code === "EEXIST")) {
-        fs.mkdir(instanceDir, function(err){
-          if(err){
-            callback(err);
-          } else {
-             callback(); 
-          }
-        });
-      } else {
-        callback(err);
-      }
-    });
-  }
-
-  function createInstanceFiles(aid, instanceDescr, iid, callback){
-      var appDir = "./app/" + aid + "/";
-      var instanceDir = "./app/" + aid + "/instance/" + iid + "/";
-      var instanceMainFile = instanceDescr.main;
-
-      var flags = [];
-      var length = 0;
-      var ctr = 0;
-      var ctr1 = 0;
-      fs.readdir(appDir, function(err, files){
-          if(err){
-              callback(err);
-          } else {
-
-              ncp(appDir, instanceDir, {
-                                           filter : function(file){ 
-                                                       if(file.indexOf("instance") < 0) {
-                                                           console.log(file);
-                                                           return true; 
-                                                       } else if (fs.statSync(file).isDirectory()) { 
-                                                           return false;
-                                                       } else {
-                                                           return true;
-                                                       }
-                                                   }
-                }, function(err){
-                  if(err){
-                      callback(err);
-                  } else {
-                      fs.rename(instanceDir + instanceMainFile, instanceDir + iid + ".js", function(err){
-                          if(err){
-                              callback(err);
-                          } else {
-                              callback();
-                          }
-                      });
-                  }
-              });
-          }
-      });
-  }
-  
-  function copyFiles(files, callback){
-    var counter = 0;
-    for(var i in files){
-      var rd = fs.createReadStream(files[i].srcFolder + files[i].srcFile);
-      rd.on("error", function(err){
-        callback(err);
-      });
-      var wr = fs.createWriteStream(files[i].desFolder + files[i].desFile);
-      wr.on("error", function(err){
-        callback(err);
-      });
-      wr.on("finish", function(){
-        counter++;
-        if(counter === files.length)
-          callback();
-      });
-      rd.pipe(wr);
-    } 
-  }
-
-  function createInstanceServerFiles(appDescr, iid, callback) {
+  function createAppServerFiles(appDescr, callback) {
 
     var aid = appDescr.id;
-    var instanceDir = "./app/" + aid + "/instance/" + iid + "/";
     var appDir = "./app/" + aid + "/";
-    var appName = appDescr.main;
-    var instanceName = iid + ".js";
-  
-    var files = [//{srcFolder:appDir, srcFile:appName, desFolder:instanceDir, desFile:instanceName},
-                 {srcFolder:templatesDir, srcFile:"agentserver_router.js", desFolder:instanceDir, desFile:"agentserver_router.js"},
-                 {srcFolder:templatesDir, srcFile:"agentserver_handlers.js", desFolder:instanceDir, desFile:"agentserver_handlers.js"}];
 
-    copyFiles(files, function(err){
-      if(err) {
-        callback(err);
-      } else {
-        callback();
-      }
-    });
+    ncp(templatesDir, appDir, function(err){
+        if(err){
+            callback(err)
+        } else {
+            callback();
+        }
+    }); 
   }
 
-  function createInstanceServer(aid, iid, instanceDescr, port){
-    var instanceDir = "./app/" + aid + "/instance/" + iid + "/";
+  function createAppServer(aid, appDescr, port){
+    var appDir = "./app/" + aid + "/";
     var startServerFile = "agentserver_router.js";
-    //var port = iid;
     console.log("availabe port at: " + port);
     //var spawn = require("child_process").spawn;
     //var child = spawn("node", [instanceDir + startServerFile, port], {cwd : instanceDir});
-    var child = spawn("node", ["./" + startServerFile, port, iid], {cwd : instanceDir});
+    var child = spawn("node", ["./" + startServerFile, port, appDescr.main], {cwd : appDir});
     //var execForCreateServer = require("child_process").exec;
     //var child = execForCreateServer("node " + instanceDir + "agentserver_router.js " + portt.toString(), 
     //                                         function(err, stdout, stderr){
@@ -685,10 +439,10 @@ module.exports = function(app) {
     //allInstances[portt] = child;
     
     //var child = execForCreateServer("node " + instanceDir + "agentserver_router.js " + portt.toString());  
-    allInstances[iid] = child;
+    allInstances[aid] = child;
 
     child.stdout.on("data", function(data){
-        instanceDescr.status = "running";
+        appDescr.status = "running";
         console.log("stdout: " + data);
     });
   
@@ -700,38 +454,13 @@ module.exports = function(app) {
     child.on("exit", function(code, signal){
         if(code != 0 && code != null){
             console.log("aid: " + aid);
-            console.log("iid: " + iid );
-                    instanceDescr.status = "crashed";
+            //console.log("iid: " + iid );
+                    appDescr.status = "crashed";
                     delete reservedPorts[port];
         }
           console.log("exit code: " + code);
           console.log("signal " + signal);
     });
-
-    
-  }
-
-  app.get("/app/:aid/instance", function(req, res){
-
-    var aid = parseInt(req.params.aid);
-    getInstancesOfApp(aid, function(err, instances){
-        if(err){
-            res.status(404).send(err.toString());
-        } else {
-            res.status(200).send(JSON.stringify(instances));
-        }
-    });
-  });
-
-  function getInstancesOfApp(aid, callback){
-    getAppDescr(aid, function(err, appDescr){
-        if(err){
-            callback(err);
-        } else {
-            callback(null, apps[apps.indexOf(appDescr)].instances);
-        }
-    });
-
   }
 
 ///////////////////////////////////////////////////////////////////
@@ -742,16 +471,15 @@ module.exports = function(app) {
 //////// Specific Instance Related Functions - START //////////////
 ///////////////////////////////////////////////////////////////////
 
-  app.delete("/app/:aid/instance/:iid", function(req, res){
+  app.delete("/app/:aid", function(req, res){
     var aid = parseInt(req.params.aid);
-    var iid = parseInt(req.params.iid);
 
-    getInstanceDescr(aid, iid, function(err, instanceDescr){
+    getAppDescr(aid, function(err, appDescr){
         if(err) {
             res.status(404).send(err.toString());
         } else {
 
-          deleteInstanceServer(aid, iid, instanceDescr, function(err){
+          deleteApp(appDescr, function(err){
             if(err) {
               res.status(500).send(err.toString());
             } else {
@@ -763,52 +491,55 @@ module.exports = function(app) {
     });
   });
 
-  function deleteInstanceServer(aid, iid, instanceDescr, callback){
-    var instanceDir = "./app/" + aid + "/instance/" + iid;
+  function deleteApp(appDescr, callback){
+      var aid = appDescr.id;
+      var appDir = "./app/" + aid;
   
-    rimraf(instanceDir, function(err){
+    rimraf(appDir, function(err){
       if(err) {
         callback(err);
       } else {
           //if(allInstances[iid].pid){
               //console.log("instance is alive");
-              killer(allInstances[iid].pid);
-              delete reservedPorts[iid];
+              killer(allInstances[aid].pid);
+              delete reservedPorts[ports[aid]];
           //} else {
               //conosle.log("instance is dead");
           //}
         //allInstances[iid].kill();
         //delete reservedPorts[iid];
-        delete allInstances[iid];
-        getInstancesOfApp(aid, function(err, instances){
-            if(err){
-                callback(err);
-            } else {
-                instances.splice(instances.indexOf(instanceDescr), 1);
+        delete allInstances[aid];
+        //getInstancesOfApp(aid, function(err, instances){
+            //if(err){
+                //callback(err);
+            //} else {
+                apps.splice(apps.indexOf(appDescr), 1);
                 callback();
-            }
-        });
+            //}
+        //});
       }
     });
   }
 
-  app.get("/app/:aid/instance/:iid", function(req, res){
+  app.get("/app/:aid", function(req, res){
     var aid = parseInt(req.params.aid);
-    var iid = parseInt(req.params.iid);
 
-    getInstanceDescr(aid, iid, function(err, instanceDescr){
+    getAppDescr(aid, function(err, appDescr){
         if(err) {
             res.status(404).send(err.toString());
         } else {
-            if(instanceDescr.status == "crashed" || instanceDescr.status == "initializing"){
-                res.status(200).send(JSON.stringify(instanceDescr));
+            console.log("appDescr: " + JSON.stringify(appDescr));
+            if(appDescr.status == "crashed" || appDescr.status == "initializing"){
+                res.status(200).send(JSON.stringify(appDescr));
             } else {
-                getInstanceStatus(iid, function(err, status){
+                getAppStatus(aid, function(err, appStatus){
                     if(err){
                         res.status(404).send(err.toString());
                     } else {
-                        instanceDescr.status = status;
-                        res.status(200).send(JSON.stringify(instanceDescr));
+                        appDescr.status = appStatus;
+                        console.log("appStatus: " + appStatus);
+                        console.log("2nd appDescr: " + JSON.stringify(appDescr));
+                        res.status(200).send(JSON.stringify(appDescr));
                     }
                 }); 
             }
@@ -816,32 +547,16 @@ module.exports = function(app) {
     });
   });
 
-
-  function getInstanceDescr(aid, iid, callback){
-      getAppDescr(aid, function(err, appDescr){
-          if(err){
-              callback(err);
-          } else {
-              var instances = apps[apps.indexOf(appDescr)].instances;
-              for(var i in instances){
-                  if(instances[i].id == iid){
-                      console.log("peida kard");
-                      callback(null, instances[i]);
-                      return;
-                  }
-              }
-              callback(new Error("Instance not Found."));
-          }
-      });
-  }
-
-  function getInstanceStatus(iid, callback) {
-    var url = "http://localhost:" + iid + "/";
+  function getAppStatus(aid, callback) {
+    var url = "http://localhost:" + ports[aid] + "/";
+    console.log("url: " + url);
     request.get(url, function(err, res, body){
+    console.log("body " + body);
+    console.log(res.statusCode);
         if(err) {
             callback(err);
         } else if(res.statusCode == 200){
-            console.log(JSON.parse(body).status);
+            //console.log(JSON.parse(body).status);
             callback(null, JSON.parse(body).status);
         } else {
             callback(new Error("error"))
@@ -850,16 +565,15 @@ module.exports = function(app) {
   }
 
 
-  app.get("/app/:aid/instance/:iid/log", function(req, res){
+  app.get("/app/:aid/log", function(req, res){
     var aid = parseInt(req.params.aid);
-    var iid = parseInt(req.params.iid);
-    var instanceDir = "./app/" + aid + "/instance/" + iid + "/";
+    var appDir = "./app/" + aid + "/";
 
-    getInstanceDescr(aid, iid, function(err, instanceDescr){
+    getAppDescr(aid, function(err, appDescr){
         if(err) {
             res.status(404).send(err.toString());
         } else {
-            fs.readFile(instanceDir + "debug.log", "utf8", function(err, data){
+            fs.readFile(appDir + "debug.log", "utf8", function(err, data){
                 if(err){
                     res.status(500).send(err.toString());
                 } else {
@@ -871,23 +585,22 @@ module.exports = function(app) {
   });
 
 
-  app.put("/app/:aid/instance/:iid", function(req, res){
+  app.put("/app/:aid", function(req, res){
     var aid = parseInt(req.params.aid);
-    var iid = parseInt(req.params.iid);
 
-    getInstanceDescr(aid, iid, function(err, instanceDescr){
-        if(err) {
+    getAppDescr(aid, function(err, appDescr){
+        if(err){
             res.status(404).send(err.toString());
         } else {
-            if(instanceDescr.status == "crashed" || instanceDescr.status == "initializing"){
-                res.status(500).send(JSON.stringify(instanceDescr));
+            if(appDescr.status == "crashed" || appDescr.status == "initializing"){
+                res.status(500).send(JSON.stringify(appDescr))
             } else {
-                startOrStopInstance(req, res, iid, aid, function(err, instanceStatus){
+                startOrStopInstance(req, res, aid, function(err, appStatus){
                     if(err){
                         res.status(500).send(err.toString());
                     } else {
-                        instanceDescr.status = instanceStatus;
-                        res.status(200).send(JSON.stringify(instanceDescr));
+                        appDescr.status = appStatus;
+                        res.status(200).send(JSON.stringify(appDescr));
                     }
                 });
             }
@@ -895,7 +608,7 @@ module.exports = function(app) {
     });
   });
 
-  function startOrStopInstance(req, res, iid, aid, callback){
+  function startOrStopInstance(req, res, aid, callback){
     var data = "";
     req.on("data", function(chunk){
       data += chunk;
@@ -903,32 +616,26 @@ module.exports = function(app) {
     req.on("end", function(){
       try {
         var targetState = JSON.parse(data);
-        var url = "http://localhost:" + ports[iid] + "/" + iid;
-        if(targetState.status === "running") {
+        var url = "http://localhost:" + ports[aid] + "/";
 
-            request.get(url, function(err, res, body){
+        var options = {
+          uri: url,
+          method: 'PUT',
+          json: targetState
+        };
+
+        if(targetState.status === "running" || targetState.status === "paused") {
+            request(options, function(err, ress, body){
                 if(err) {
                     callback(err);
-                } else if(res.statusCode == 200){
-                    callback(null, JSON.parse(body).status);
-                } else if(res.statusCode == 204) {
+                } else if(ress.statusCode == 200){
+                    console.log(body + typeof(body));
+                    callback(null, body.status);
+                    //callback(null, JSON.parse(body).status);
+                } else if(ress.statusCode == 204) {
                     callback(null, "running");
                 } else {
-                    callback(new Error("error"))
-                }
-            });
-        } else if(targetState.status === "paused") {
-
-            console.log("111");
-            request.del(url, function(err, res, body){
-                if(err) {
-                    callback(err);
-                } else if(res.statusCode == 200){
-                    callback(null, JSON.parse(body).status);
-                } else if(res.statusCode == 204) {
-                    callback(null, "paused");
-                } else {
-                    callback(new Error("error"))
+                    callback(new Error("error"));
                 }
             });
         } else {
@@ -946,21 +653,4 @@ module.exports = function(app) {
 ///////////////////////////////////////////////////////////////////
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

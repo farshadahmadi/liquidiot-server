@@ -1,0 +1,19 @@
+{
+    "libraries": [{
+          "name": "ds18x20",
+          "version": "0.2.0"
+        },
+        {
+          "name": "ssssss",
+          "version": "1.2.3"
+        }
+    ],
+    "location": "TE113",
+    "ip-address": "130.230.144.111",
+    "port": 8000,
+    "connected-devices" : {
+        "temp-sensor": {
+            "model": "ds18B20"
+        }
+    }
+}
