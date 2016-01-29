@@ -1,1 +1,1 @@
-{"libraries":{"ds18x20":"0.2.0"},"location":"TE113","host":"130.230.144.111","port":8000,"connected-devices":{"temp-sensor":{"model":"ds18B20"}},"id":"569f6d8ad5225b6c1b91d8ea"}
+{"libraries":{"":""},"location":"","url":"","connected-devices":{"":{"model":""}},"id":""}
