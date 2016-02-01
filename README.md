@@ -18,3 +18,7 @@ This project is a nodejs application:
 3- Install needed dependencies. 'npm install'
 
 4- Run the project. 'npm start'
+
+## Documentation
+
+You can find the latest API documentation in /Documents/ folder.
