@@ -27,6 +27,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   var zlib = require("zlib");
   var targz = require("tar.gz");
   var upload = multer({dest:'./uploads/'});
+  var dm = require("./router/Dm")(deviceManagerUrl, deviceInfo);
 
   var reservedPorts = [];
   var allInstances = [];
@@ -75,7 +76,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 ////////////// app Related Functions - START //////////////////////
 ///////////////////////////////////////////////////////////////////
 
-/*
+
   function sendAppInfoToDeviceManafer(appDescr, callback){
 
         var url = deviceManagerUrl + deviceInfo.id + "/apps";
@@ -95,7 +96,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             }
         });
   }
- */
+ 
 
   // This method is called for deployment of application. The application should be packed
   // in tarball in .tgz format.
@@ -113,21 +114,18 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
         console.log("1.appDescr: " + JSON.stringify(appDescr));
 
-        //sendAppInfoToDeviceManafer(appDescr, function(err){
-          //if(err){
-            //res.status(500).send(err.toString());
-          //} else {
-            instanciate(appDescr, function(err, appStatus){
-              if(err) {
-                res.status(500).send(err.toString());
-              } else {
-                //res.status(200).send(iid.toString());
-                appDescr.status = appStatus;
-                res.status(200).send(JSON.stringify(appDescr));
-              }
+        instanciate(appDescr, function(err, appStatus){
+          if(err) {
+            res.status(500).send(err.toString());
+          } else {
+            //res.status(200).send(iid.toString());
+            appDescr.status = appStatus;
+            res.status(200).send(JSON.stringify(appDescr));
+            dm.addAppInfo(appDescr, function(err, res){
+                console.log(res);
             });
-          //}
-        //});
+          }
+        });
       }
     });
   });
