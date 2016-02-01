@@ -11,7 +11,7 @@ var fs = require("fs.extra");
 var request = require("request");
 var express = require("express");
 var app = express();
-
+var deviceManagerUrl = "http://130.230.142.101:3000/";
 
 fs.readFile("./config.txt", "utf8", function(err, data){
     if(err){
@@ -22,7 +22,7 @@ fs.readFile("./config.txt", "utf8", function(err, data){
         if(deviceInfo.id){
             // If the device info has an id, it means that it has been already added to device manager server.
             // The device info should be checked on the server, may be, there is a need to update the info.
-            require("./router/main")(app);
+            require("./router/main")(app, deviceManagerUrl, deviceInfo);
             var server = app.listen(8000, function(){
               console.log("server started");  
             });
@@ -32,7 +32,7 @@ fs.readFile("./config.txt", "utf8", function(err, data){
 
             console.log(data);
             //var deviceManagerUrl = "http://localhost:3000/";
-            var deviceManagerUrl = "http://130.230.142.101:3000/";
+            
             var options = {
                 uri: deviceManagerUrl,
                 method: 'POST',
@@ -48,7 +48,7 @@ fs.readFile("./config.txt", "utf8", function(err, data){
                             console.log(err.toString());
                         } else {
                             //console.log("config file updated.");
-                            require("./router/main")(app);
+                            require("./router/main")(app, deviceManagerUrl, deviceInfo);
 
                             var server = app.listen(8000, function(){
                               console.log("server started");  

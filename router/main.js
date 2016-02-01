@@ -9,7 +9,7 @@
 
 "use strict"
 
-module.exports = function(app) {
+module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
   var fs = require("fs.extra");
   var rimraf = require("rimraf");
@@ -75,6 +75,28 @@ module.exports = function(app) {
 ////////////// app Related Functions - START //////////////////////
 ///////////////////////////////////////////////////////////////////
 
+/*
+  function sendAppInfoToDeviceManafer(appDescr, callback){
+
+        var url = deviceManagerUrl + deviceInfo.id + "/apps";
+        var options = {
+          uri: url,
+          method: 'POST',
+          json: appDescr
+        };
+
+        request(options, function(err, res, body){
+            if(err) {
+                callback(err);
+            } else if(res.statusCode == 200){
+                console.log(body + " : " + typeof(body));
+                callback(null, body);
+                //callback(null, JSON.parse(body).status);
+            }
+        });
+  }
+ */
+
   // This method is called for deployment of application. The application should be packed
   // in tarball in .tgz format.
   app.post("/app", upload.single("filekey"), function(req, res) {
@@ -85,19 +107,27 @@ module.exports = function(app) {
         res.status(500).send(err.toString());
       } else {
         appDescr.id = aid;
+        appDescr.status = "initializing";
         //appDescr.instances = [];
         apps.push(appDescr);
-        console.log("1.appDescr: " + JSON.stringify(appDescr));
-          instanciate(appDescr, function(err){
-            if(err) {
-              // we should delete the initializing instace from the app instances list
-              res.status(500).send(err.toString());
-            } else {
-              //res.status(200).send(iid.toString());
-              res.status(200).send(JSON.stringify(appDescr));
 
-            }
-          });
+        console.log("1.appDescr: " + JSON.stringify(appDescr));
+
+        //sendAppInfoToDeviceManafer(appDescr, function(err){
+          //if(err){
+            //res.status(500).send(err.toString());
+          //} else {
+            instanciate(appDescr, function(err, appStatus){
+              if(err) {
+                res.status(500).send(err.toString());
+              } else {
+                //res.status(200).send(iid.toString());
+                appDescr.status = appStatus;
+                res.status(200).send(JSON.stringify(appDescr));
+              }
+            });
+          //}
+        //});
       }
     });
   });
@@ -111,11 +141,11 @@ module.exports = function(app) {
       } else {
         uploadApp(req, aid, function(err){
           if(err){
-            callback(null, err);
+            callback(err);
           } else {
             extractTarFile(aid, function(err){
               if(err){
-                callback(null, err);
+                callback(err);
               } else {
                 extractAppDescription(aid, function(err, appDescription){
                     if(err){
@@ -127,7 +157,7 @@ module.exports = function(app) {
                           } else {
                             callback(null, appDescription);
                           }
-                         });
+                        });
                      }
                  });
               }
@@ -371,8 +401,9 @@ module.exports = function(app) {
     var aid = appDescr.id;
     portscanner.findAPortNotInUse(8001, 9000, "127.0.0.1", function(err, port){
       if(!err) {
-          console.log("before:" + reservedPorts[port]);
-          console.log("port: " + port);
+        console.log("before:" + reservedPorts[port]);
+        console.log("port: " + port);
+        var appDir = "./app/" + aid + "/";
         if (reservedPorts[port] === undefined) {
           ////var iid = ((new Date()).getTime()) % 1000000;
           reservedPorts[port] = true;
@@ -380,25 +411,28 @@ module.exports = function(app) {
 
           console.log("after: " + reservedPorts[port]);
           
-          appDescr.status = "initializing";
+          //appDescr.status = "initializing";
           console.log("instace: " + JSON.stringify(appDescr));
 
 
           console.log("2.port:" + port);
           createAppServerFiles(appDescr, function(err){
             if(err) {
-              rimraf(instanceDir, function(error){
+              delete reservedPorts[port];
+              delete ports[aid];
+              apps.splice(apps.indexOf(appDescr), 1);
+              rimraf(appDir, function(error){
                 if(error) {
                   callback(error);
                 } else {
                   callback(err);
                 }
-                delete reservedPorts[port];
-                delete ports[aid];
               });
             } else {
-              createAppServer(aid, appDescr, port);
-              callback(null);
+              createAppServer(aid, appDescr, port, function(err, appStatus){
+                callback(null, appStatus);
+              });
+              //callback(null);
             }
           });
         } else {
@@ -424,7 +458,7 @@ module.exports = function(app) {
     }); 
   }
 
-  function createAppServer(aid, appDescr, port){
+  function createAppServer(aid, appDescr, port, callback){
     var appDir = "./app/" + aid + "/";
     var startServerFile = "agentserver_router.js";
     console.log("availabe port at: " + port);
@@ -442,8 +476,14 @@ module.exports = function(app) {
     allInstances[aid] = child;
 
     child.stdout.on("data", function(data){
+      console.log("stdout: " + data);
+      
+      if(appDescr.status == "initializing"){
         appDescr.status = "running";
-        console.log("stdout: " + data);
+        callback(null, "running");
+      } else {
+        appDescr.status = "running";
+      }
     });
   
     child.stderr.on("data", function(data){
@@ -453,10 +493,15 @@ module.exports = function(app) {
 
     child.on("exit", function(code, signal){
         if(code != 0 && code != null){
+          if(appDescr.status == "initializing"){
             console.log("aid: " + aid);
-            //console.log("iid: " + iid );
-                    appDescr.status = "crashed";
-                    delete reservedPorts[port];
+            appDescr.status = "crashed";
+            delete reservedPorts[port];
+            callback(null, "crashed");
+          } else {
+            appDescr.status = "crashed";
+            delete reservedPorts[port];
+          }
         }
           console.log("exit code: " + code);
           console.log("signal " + signal);

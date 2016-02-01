@@ -6,7 +6,7 @@ var app = express();
 
 var log_file = fs.createWriteStream("./debug.log", {flag : "w"});
 
-console.log("cwd: " +process.cwd());
+//console.log("cwd: " +process.cwd());
 
 process.on("uncaughtException", function(error){
   console.err(error.toString());
@@ -29,7 +29,7 @@ console.err = function(d){
 }
 
 app.listen(process.argv[2], function(){
-  console.log("Exress app listening on port " + process.argv[2]);
+  //console.log("Exress app listening on port " + process.argv[2]);
   var src = fs.readFileSync("./" + process.argv[3], "utf8");
   eval(src);
   //console.log(src);
