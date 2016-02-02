@@ -27,7 +27,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   var zlib = require("zlib");
   var targz = require("tar.gz");
   var upload = multer({dest:'./uploads/'});
-  var dm = require("./router/Dm")(deviceManagerUrl, deviceInfo);
+  var dm = require("./dm")(deviceManagerUrl, deviceInfo);
 
   var reservedPorts = [];
   var allInstances = [];
@@ -120,10 +120,11 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
           } else {
             //res.status(200).send(iid.toString());
             appDescr.status = appStatus;
-            res.status(200).send(JSON.stringify(appDescr));
+            console.log("tuuuuuuuuuuuu");
             dm.addAppInfo(appDescr, function(err, res){
-                console.log(res);
+                console.log("ADD to dm response: " + res);
             });
+            res.status(200).send(JSON.stringify(appDescr));
           }
         });
       }

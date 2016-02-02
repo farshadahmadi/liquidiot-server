@@ -8,8 +8,12 @@
 
 module.exports = function(deviceManagerUrl, deviceInfo) {
   
+
+  var request = require("request");
+
   module.addAppInfo = function(appDescr, callback) {
-      var url = this.deviceManagerUrl + this.deviceInfo.id + "/apps";
+      var url = deviceManagerUrl + deviceInfo.id + "/apps";
+      console.log("This is the url" + url);
       var options = {
           uri: url,
           method: 'POST',
@@ -25,7 +29,6 @@ module.exports = function(deviceManagerUrl, deviceInfo) {
               //callback(null, JSON.parse(body).status);
           }
       });
-    };
-  }
+  };
   return module;
 }

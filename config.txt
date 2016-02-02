@@ -1,1 +1,1 @@
-{"libraries":{"":""},"location":"","url":"","connected-devices":{"":{"model":""}},"id":""}
+{"libraries":{"lame":"1.2.3","speaker":"0.2.6"},"location":"TE113","url":"http://130.230.144.169:8000","connected-devices":{"speaker":{"model":"typhoon"}},"id":"56a8dbb5efeb5ed62550bd69"}
