@@ -122,7 +122,11 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             appDescr.status = appStatus;
             console.log("tuuuuuuuuuuuu");
             dm.addAppInfo(appDescr, function(err, res){
+              if(err) {
+                conosle.log(err.toString());
+              } else {
                 console.log("ADD to dm response: " + res);
+              }
             });
             res.status(200).send(JSON.stringify(appDescr));
           }
@@ -527,6 +531,13 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             if(err) {
               res.status(500).send(err.toString());
             } else {
+              dm.removeAppInfo(appDescr, function(err, response){
+                if(err){
+                  console.log(err.toString());
+                } else {
+                  console.log("RAMOVE from dm response: " + response);
+                }
+              });
               res.status(200).send("Instance is deleted.");
             }
           });
