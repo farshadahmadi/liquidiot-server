@@ -211,65 +211,64 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                  .on("error", function(err){ callback(err); })
                  .pipe(zlib.Gunzip())
                  .pipe(tar.Extract({ path : target }))
-                 .on("end", function(){ deleteAppTarFile(aid, function(){ callback(); }); });
+                 .on("end", function(){ callback(); });
   }
 
   function extractAppDescription(aid, callback) {
     var appDir = "./app/" + aid + "/";
-    fs.readFile(appDir + "package.json", "utf8", function(err, src){
-      if(err) {
-          callback(err);
-      } else {
-        try{
-          var appDescr = JSON.parse(src);
-          if(appDescr.main) {
-              fs.stat(file + "/" + appDescr.main, function(err, stat){
-                  if(err){
-                      callback(err);
-                  } else {
-                      fs.readFile(appDir + "liquidiot.json", "utf8", function(err, src){
-                          if(err){
-                            callback(err);
-                          } else {
-                            try{
-                              var liquidiotJson = JSON.parse(src);
-                              if(liquidiotJson.classes) {
-                                appDescr.classes = liquidiotJson.classes;
-                                callback(null, appDescr);
-                              } else {
-                                callback(new Error("liquidiot.json format is incorrect. No Classes entry."));
-                              }
-                            } catch(error){
-                              callback(error);
-                            }
-                          }
-                      });
-                  }
-              });
-          } else {
-              callback(new Error("Package.json format is incorrect. No Main entry."));
-          }
-        } catch(error){
-          callback(error);
-        }
-      }
-    });
-  }
-
-  function deleteAppTarFile(aid, callback){
-    var appDir = "./app/" + aid + "/";
-    var appTarFile = aid + ".tgz";
-    
-    rimraf(appDir + appTarFile, function(err){
+    fs.readdir(appDir, function(err, files){
       if(err){
-        callback(err);
+            callback(err);
       } else {
-        callback(null);
+        files.map(function(file){
+          return path.join(appDir, file);
+        //}).filter(function(file){
+          //return (fs.statSync(file).isDirectory() && file !== "instance");
+        }).forEach(function(file){
+          fs.readFile(appDir + "package.json", "utf8", function(err, src){
+            if(err) {
+                callback(err);
+            } else {
+              try{
+                var appDescr = JSON.parse(src);
+                if(appDescr.main) {
+                    fs.stat(file + "/" + appDescr.main, function(err, stat){
+                        if(err){
+                            callback(err);
+                        } else {
+                            fs.readFile(appDir + "liquidiot.json", "utf8", function(err, src){
+                                if(err){
+                                  callback(err);
+                                } else {
+                                  try{
+                                    var liquidiotJson = JSON.parse(src);
+                                    if(liquidiotJson.classes) {
+                                      appDescr.classes = liquidiotJson.classes;
+                                      callback(null, appDescr);
+                                    } else {
+                                      callback(new Error("Package.json format is incorrect. No Main entry."));
+                                    }
+                                  } catch(error){
+                                    callback(error);
+                                  }
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    callback(new Error("Package.json format is incorrect. No Main entry."));
+                }
+              } catch(error){
+                callback(error);
+              }
+            }
+          });
+        });
       }
     });
   }
 
-  /*function copyFilesToAppDir(aid, callback){
+  function copyFilesToAppDir(aid, callback){
     var appDir = "./app/" + aid + "/";
     var appTarFile = aid + ".tgz";
     
@@ -279,8 +278,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       } else {
         files.map(function(file){
           return path.join(appDir, file);
-        }).filter(function(file){
-          return (fs.statSync(file).isDirectory() && file !== "instance");
+        //}).filter(function(file){
+          //return (fs.statSync(file).isDirectory() && file !== "instance");
         }).forEach(function(file){
           ncp(file, appDir, function(err){
             if(err){
@@ -305,7 +304,6 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       }
     });
   }
-  */
 
   app.get("/app", function(req, res) {
     var resString = JSON.stringify(apps);
