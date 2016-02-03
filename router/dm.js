@@ -27,6 +27,8 @@ module.exports = function(deviceManagerUrl, deviceInfo) {
               console.log(body + " : " + typeof(body));
               callback(null, body);
               //callback(null, JSON.parse(body).status);
+          } else {
+              callback(new Error(body));
           }
       });
   };
@@ -47,6 +49,8 @@ module.exports = function(deviceManagerUrl, deviceInfo) {
               console.log(body + " : " + typeof(body));
               callback(null, body);
               //callback(null, JSON.parse(body).status);
+          } else {
+              callback(new Error(body));
           }
       });
   }
