@@ -109,18 +109,13 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       } else {
         appDescr.id = aid;
         appDescr.status = "initializing";
-        //appDescr.instances = [];
         apps.push(appDescr);
-
-        console.log("1.appDescr: " + JSON.stringify(appDescr));
 
         instanciate(appDescr, function(err, appStatus){
           if(err) {
             res.status(500).send(err.toString());
           } else {
-            //res.status(200).send(iid.toString());
             appDescr.status = appStatus;
-            console.log("tuuuuuuuuuuuu");
             dm.addAppInfo(appDescr, function(err, res){
               if(err) {
                 conosle.log(err.toString());
@@ -216,49 +211,65 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                  .on("error", function(err){ callback(err); })
                  .pipe(zlib.Gunzip())
                  .pipe(tar.Extract({ path : target }))
-                 .on("end", function(){ callback(); });
+                 .on("end", function(){ deleteAppTarFile(aid, function(){ callback(); }); });
   }
 
   function extractAppDescription(aid, callback) {
     var appDir = "./app/" + aid + "/";
-    fs.readdir(appDir, function(err, files){
-      if(err){
-            callback(err);
+    fs.readFile(appDir + "package.json", "utf8", function(err, src){
+      if(err) {
+          callback(err);
       } else {
-        files.map(function(file){
-          return path.join(appDir, file);
-        }).filter(function(file){
-          return (fs.statSync(file).isDirectory() && file !== "instance");
-        }).forEach(function(file){
-
-          fs.readFile(file + "/package.json", "utf8", function(err, src){
-            if(err) {
-                callback(err);
-            } else {
-                var appDescr = JSON.parse(src);
-                //appDescription.id = parseInt(aid);
-                //console.log("app Description: " + JSON.stringify(appDescription));
-                
-                if(appDescr.main) {
-                    fs.stat(file + "/" + appDescr.main, function(err, stat){
-                        if(err){
+        try{
+          var appDescr = JSON.parse(src);
+          if(appDescr.main) {
+              fs.stat(file + "/" + appDescr.main, function(err, stat){
+                  if(err){
+                      callback(err);
+                  } else {
+                      fs.readFile(appDir + "liquidiot.json", "utf8", function(err, src){
+                          if(err){
                             callback(err);
-                        } else {
-                            callback(null, appDescr);
-                        }
-                    });
-
-                } else {
-                    callback(new Error("Package.json format is incorrect. No Main entry."));
-                }
-            }
-          });
-        });
+                          } else {
+                            try{
+                              var liquidiotJson = JSON.parse(src);
+                              if(liquidiotJson.classes) {
+                                appDescr.classes = liquidiotJson.classes;
+                                callback(null, appDescr);
+                              } else {
+                                callback(new Error("liquidiot.json format is incorrect. No Classes entry."));
+                              }
+                            } catch(error){
+                              callback(error);
+                            }
+                          }
+                      });
+                  }
+              });
+          } else {
+              callback(new Error("Package.json format is incorrect. No Main entry."));
+          }
+        } catch(error){
+          callback(error);
+        }
       }
     });
   }
 
-  function copyFilesToAppDir(aid, callback){
+  function deleteAppTarFile(aid, callback){
+    var appDir = "./app/" + aid + "/";
+    var appTarFile = aid + ".tgz";
+    
+    rimraf(appDir + appTarFile, function(err){
+      if(err){
+        callback(err);
+      } else {
+        callback(null);
+      }
+    });
+  }
+
+  /*function copyFilesToAppDir(aid, callback){
     var appDir = "./app/" + aid + "/";
     var appTarFile = aid + ".tgz";
     
@@ -294,6 +305,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       }
     });
   }
+  */
 
   app.get("/app", function(req, res) {
     var resString = JSON.stringify(apps);
