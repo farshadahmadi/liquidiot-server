@@ -50,6 +50,27 @@ module.exports = function(deviceManagerUrl, deviceInfo) {
           }
       });
   }
+  
+  module.updateAppInfo = function(appDescr, callback){
+      var aid = appDescr.id;
+      var url = deviceManagerUrl + deviceInfo.id + "/apps/" + aid;
+      console.log("This is the url: " + url);
+      var options = {
+          uri: url,
+          method: 'PUT',
+          json: appDescr
+      };
+
+      request(options, function(err, res, body){
+          if(err) {
+              callback(err);
+          } else if(res.statusCode == 200){
+              console.log(body + " : " + typeof(body));
+              callback(null, body);
+              //callback(null, JSON.parse(body).status);
+          }
+      });
+  }
 
   return module;
 }
