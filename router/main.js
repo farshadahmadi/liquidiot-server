@@ -222,6 +222,98 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       } else {
         files.map(function(file){
           return path.join(appDir, file);
+        }).filter(function(file){
+          return (fs.statSync(file).isDirectory() && file !== "instance");
+        }).forEach(function(file){
+
+          fs.readFile(file + "/package.json", "utf8", function(err, src){
+            if(err) {
+                callback(err);
+            } else {
+              try{
+                var appDescr = JSON.parse(src);
+                //appDescription.id = parseInt(aid);
+                //console.log("app Description: " + JSON.stringify(appDescription));
+                
+                if(appDescr.main) {
+                    fs.stat(file + "/" + appDescr.main, function(err, stat){
+                        if(err){
+                            callback(err);
+                        } else {
+                            callback(null, appDescr);
+                        }
+                    });
+
+                } else {
+                    callback(new Error("Package.json format is incorrect. No Main entry."));
+                }
+              } catch(e){
+                callback(e);
+              }
+            }
+          });
+        });
+      }
+    });
+  }
+
+  function copyFilesToAppDir(aid, callback){
+    var appDir = "./app/" + aid + "/";
+    var appTarFile = aid + ".tgz";
+    
+    fs.readdir(appDir, function(err, files){
+      if(err){
+            callback(err);
+      } else {
+        files.map(function(file){
+          return path.join(appDir, file);
+        }).filter(function(file){
+          return (fs.statSync(file).isDirectory() && file !== "instance");
+        }).forEach(function(file){
+          ncp(file, appDir, function(err){
+            if(err){
+              callback(err);
+            } else {
+              rimraf(file, function(err){
+                if(err){
+                  callback(err);
+                } else {
+                  rimraf(appDir + appTarFile, function(err){
+                    if(err){
+                      callback(err);
+                    } else {
+                      callback(null);
+                    }
+                  });
+                }
+              });
+            }
+          });
+        });
+      }
+    });
+  }
+
+/*
+  function extractTarFile(aid, callback) {
+    var tarFile = "./app/" + aid + "/" + aid + ".tgz";
+    var target = "./app/" + aid;
+
+    fs.createReadStream(tarFile)
+                 .on("error", function(err){ callback(err); })
+                 .pipe(zlib.Gunzip())
+                 .pipe(tar.Extract({ path : target }))
+                 .on("end", function(){ callback(); });
+  }
+
+  function extractAppDescription(aid, callback) {
+    var appDir = "./app/" + aid + "/";
+    fs.readdir(appDir, function(err, files){
+      if(err){
+            callback(err);
+      } else {
+        files.map(function(file){
+          return path.join(appDir, file);
         //}).filter(function(file){
           //return (fs.statSync(file).isDirectory() && file !== "instance");
         }).forEach(function(file){
@@ -304,6 +396,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       }
     });
   }
+*/
 
   app.get("/app", function(req, res) {
     var resString = JSON.stringify(apps);
