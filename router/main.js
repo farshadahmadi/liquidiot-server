@@ -503,6 +503,13 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             callback(null, "crashed");
           } else {
             appDescr.status = "crashed";
+            dm.updateAppInfo(appDescr, function(err, response){
+              if(err){
+                console.log(err.toString());
+              } else {
+                console.log("update on dm response: " + response);
+              }
+            });
             delete reservedPorts[port];
           }
         }
@@ -655,6 +662,13 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                         res.status(500).send(err.toString());
                     } else {
                         appDescr.status = appStatus;
+                        dm.updateAppInfo(appDescr, function(err, response){
+                          if(err){
+                            console.log("update erro: " + err.toString());
+                          } else {
+                            console.log("update on dm response: " + response);
+                          }
+                        });
                         res.status(200).send(JSON.stringify(appDescr));
                     }
                 });

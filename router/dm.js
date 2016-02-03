@@ -46,7 +46,7 @@ module.exports = function(deviceManagerUrl, deviceInfo) {
           if(err) {
               callback(err);
           } else if(res.statusCode == 200){
-              console.log(body + " : " + typeof(body));
+              //console.log(body + " : " + typeof(body));
               callback(null, body);
               //callback(null, JSON.parse(body).status);
           } else {
@@ -69,9 +69,10 @@ module.exports = function(deviceManagerUrl, deviceInfo) {
           if(err) {
               callback(err);
           } else if(res.statusCode == 200){
-              console.log(body + " : " + typeof(body));
+              //console.log(body + " : " + typeof(body));
               callback(null, body);
-              //callback(null, JSON.parse(body).status);
+          } else {
+              callback(new Error(body));
           }
       });
   }
