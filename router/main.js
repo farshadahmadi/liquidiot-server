@@ -225,7 +225,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
         //}).filter(function(file){
           //return (fs.statSync(file).isDirectory() && file !== "instance");
         }).forEach(function(file){
-          fs.readFile(appDir + "package.json", "utf8", function(err, src){
+          fs.readFile(file + "/package.json", "utf8", function(err, src){
             if(err) {
                 callback(err);
             } else {
@@ -236,7 +236,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                         if(err){
                             callback(err);
                         } else {
-                            fs.readFile(appDir + "liquidiot.json", "utf8", function(err, src){
+                            fs.readFile(file + "/liquidiot.json", "utf8", function(err, src){
                                 if(err){
                                   callback(err);
                                 } else {
