@@ -223,7 +223,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
         files.map(function(file){
           return path.join(appDir, file);
         }).filter(function(file){
-          return (fs.statSync(file).isDirectory() && file !== "instance");
+          return (fs.statSync(file).isDirectory());
         }).forEach(function(file){
 
           fs.readFile(file + "/package.json", "utf8", function(err, src){
@@ -240,7 +240,24 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                         if(err){
                             callback(err);
                         } else {
-                            callback(null, appDescr);
+                            fs.readFile(file + "/liquidiot.json", "utf8", function(err, src){
+                                if(err){
+                                  callback(err);
+                                } else {
+                                  try{
+                                    var liquidiotJson = JSON.parse(src);
+                                    if(liquidiotJson.classes) {
+                                      appDescr.classes = liquidiotJson.classes;
+                                      callback(null, appDescr);
+                                    } else {
+                                      callback(new Error("Package.json format is incorrect. No Main entry."));
+                                    }
+                                  } catch(error){
+                                    callback(error);
+                                  }
+                                }
+                            });
+                            //callback(null, appDescr);
                         }
                     });
 
