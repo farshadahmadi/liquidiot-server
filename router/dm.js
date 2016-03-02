@@ -12,7 +12,7 @@ module.exports = function(deviceManagerUrl, deviceInfo) {
   var request = require("request");
 
   module.addAppInfo = function(appDescr, callback) {
-      var url = deviceManagerUrl + deviceInfo.id + "/apps";
+      var url = deviceManagerUrl + deviceInfo.idFromDM + "/apps";
       console.log("This is the url" + url);
       var options = {
           uri: url,
@@ -35,7 +35,7 @@ module.exports = function(deviceManagerUrl, deviceInfo) {
 
   module.removeAppInfo = function(appDescr, callback){
       var aid = appDescr.id;
-      var url = deviceManagerUrl + deviceInfo.id + "/apps/" + aid;
+      var url = deviceManagerUrl + deviceInfo.idFromDM + "/apps/" + aid;
       console.log("This is the url" + url);
       var options = {
           uri: url,
@@ -57,7 +57,7 @@ module.exports = function(deviceManagerUrl, deviceInfo) {
   
   module.updateAppInfo = function(appDescr, callback){
       var aid = appDescr.id;
-      var url = deviceManagerUrl + deviceInfo.id + "/apps/" + aid;
+      var url = deviceManagerUrl + deviceInfo.idFromDM + "/apps/" + aid;
       console.log("This is the url: " + url);
       var options = {
           uri: url,
