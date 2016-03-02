@@ -1,0 +1,1 @@
+{"name":"TemperatureDevice","manufacturer":"RPi","libraries":{"ds18x20":"0.2.0"},"location":"TE113","url":"http://130.230.140.157:8082","connected-devices":{"temp-sensor":{"model":"ds18b20"}},"idFromBackend":"5582686906ff4a1d82820e295323a430","idFromDM":"56d6c602d501e1db2f0aa004"}
