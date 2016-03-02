@@ -11,7 +11,7 @@ var fs = require("fs.extra");
 var request = require("request");
 var express = require("express");
 var app = express();
-var deviceManagerUrl = "http://130.230.142.101:3000/";
+var deviceManagerUrl = "http://192.168.1.172:3000/";
 
 fs.readFile("./config.txt", "utf8", function(err, data){
     if(err){
