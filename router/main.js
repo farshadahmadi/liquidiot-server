@@ -63,14 +63,22 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
   });
 
-  app.use("/app/:aid/instance/:iid/api", function(req, res){
+  app.use("/app/:aid/api", function(req, res){
+    var aid = parseInt(req.params.aid);
+    console.log("reqUrl " + req.url);
+    var url = "http://localhost:" + ports[aid] + req.url;
+    console.log(url);
+    req.pipe(request(url)).pipe(res);
+  });
+
+  /*app.use("/app/:aid/instance/:iid/api", function(req, res){
     var aid = parseInt(req.params.aid);
     var iid = parseInt(req.params.iid);
     console.log("reqUrl " + req.url);
     var url = "http://localhost:" + ports[iid] + req.url;
     console.log(url);
     req.pipe(request(url)).pipe(res);
-  });
+  });*/
 
 ///////////////////////////////////////////////////////////////////
 ////////////// app Related Functions - START //////////////////////
@@ -118,7 +126,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             appDescr.status = appStatus;
             dm.addAppInfo(appDescr, function(err, res){
               if(err) {
-                conosle.log(err.toString());
+                console.log(err.toString());
               } else {
                 console.log("ADD to dm response: " + res);
               }
