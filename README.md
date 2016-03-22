@@ -15,7 +15,7 @@ This project is a nodejs application:
 
 1. Go to the project directory you have just cloned. 'cd liquidiot-server'
 
-1. Install needed dependencies. 'npm install'
+1. Install needed dependencies. - ```npm install
 
 1. There are three different config files in the root directory. You can info regarding each of them in the following:
 
