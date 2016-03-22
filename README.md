@@ -19,13 +19,13 @@ This project is a nodejs application:
 
 4- There are three different config files in the root directory. You can info regarding each of them in the following:
 
-  4-1. ###config-template.txt 
+  4-1. ### config-template.txt 
   Copy this file, name it "config.txt", and configure it. This file contanis information regarding the IoT device including device name, manufacturer, url and so on.
   
-  4-2. ###db-config.template.txt
+  4-2. ### db-config.template.txt
   Copy this file, name it "dm-config.txt", and configure it. This file contanis information regarding the device manager. Right now it only has device manager url.
   
-  4-3. ###backend-config.template.txt
+  4-3. ### backend-config.template.txt
   Copy this file, name it "backend-config.txt", and configure it. This file contanis information regarding the IoT backend. We are using Wapice IoT backend (https://www.wapice.com/fi/tuotteet/iot-ticket-internet-of-things-ratkaisut). Right now, this file only has IoT backend url.
 
 5- Run the project. 'npm start'
