@@ -118,7 +118,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             appDescr.status = appStatus;
             dm.addAppInfo(appDescr, function(err, res){
               if(err) {
-                conosle.log(err.toString());
+                console.log(err.toString());
               } else {
                 console.log("ADD to dm response: " + res);
               }
