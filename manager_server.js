@@ -16,12 +16,12 @@ getDeviceInfo(function(err, deviceInfo){
     if(err){
         console.log(err.toString());
     } else {
-        console.log(deviceInfo);
+        //console.log(deviceInfo);
         getDeviceManagerInfo(function(err, deviceManagerInfo){
             if(err){
                 console.log(err.toString());
             } else {
-                console.log(deviceManagerInfo);
+                //console.log(deviceManagerInfo);
 
 		registerToDeviceManager(deviceInfo, deviceManagerInfo, function(err){
 	            if(err){
@@ -32,7 +32,7 @@ getDeviceInfo(function(err, deviceInfo){
                             if(err){
                                 console.log(err.toString());
                             } else {
-                                console.log(backendInfo);
+                                //console.log(backendInfo);
 	                        registerToBackend(deviceInfo, backendInfo, function(err){
 	                            if(err){
 	                                console.log(err.toString());
@@ -100,7 +100,7 @@ function registerToDeviceManager(deviceInfo, deviceManagerInfo, callback){
 
             request(options, function(err, res, body){
                 if(!err && res.statusCode == 200) {
-                    console.log(body);
+                    //console.log(body);
                     deviceInfo.idFromDM = body.toString();
                     fs.writeFile("./config.txt", JSON.stringify(deviceInfo), function(err){
                         if(err){
