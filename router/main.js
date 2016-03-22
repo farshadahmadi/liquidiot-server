@@ -1,4 +1,4 @@
-/**
+  /**
  * Copyright (c) TUT Tampere University of Technology 2015-2016
  * All rights reserved.
  *
@@ -117,7 +117,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             appDescr.status = appStatus;
             dm.addAppInfo(appDescr, function(err, res){
               if(err) {
-                conosle.log(err.toString());
+                console.log(err.toString());
               } else {
                 console.log("ADD to dm response: " + res);
               }

@@ -16,7 +16,7 @@ module.exports = function(app, agent) {
   status.status = "running";
   agent.start(function(err){
     if(err){
-      console.log("(server) Agent can not start: " + err.toString());
+      //console.log("(server) Agent can not start: " + err.toString());
       status.status = "paused";
       throw err;
     } else {
@@ -46,7 +46,7 @@ module.exports = function(app, agent) {
       status.status = "running";
       agent.start(function(err){
           if(err){
-              console.log("Agent can not start:" + err.toString());
+              //console.log("Agent can not start:" + err.toString());
               status.status = "paused";
               throw err;
               respond(res, 500, err.toString());
