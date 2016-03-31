@@ -9,11 +9,11 @@ var log_file = fs.createWriteStream("./debug.log", {flag : "w"});
 //console.log("cwd: " +process.cwd());
 
 process.on("uncaughtException", function(error){
-  //console.err(error.toString());
-  console.err(error.stack);
+  ////console.err(error.toString());
+  //console.err(error.stack);
   fs.appendFileSync("./debug.log", error.stack, "utf8");
-  //var instanceLog = fs.readFileSync("./debug.log", "utf8");
-  //throw new Error(instanceLog);
+  ////var instanceLog = fs.readFileSync("./debug.log", "utf8");
+  ///throw new Error(instanceLog);
   throw error;
 });
 

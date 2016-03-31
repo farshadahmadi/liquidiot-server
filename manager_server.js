@@ -163,7 +163,7 @@ function registerToBackend(deviceInfo, backendInfo, callback){
 }
 
 function start(deviceInfo, deviceManagerInfo){
-  require("./router/main")(app, deviceInfo, deviceManagerInfo.url);
+  require("./router/main")(app, deviceManagerInfo.url, deviceInfo);
   var server = app.listen(8000, function(){
     console.log("server started");  
   });
