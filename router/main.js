@@ -136,8 +136,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
               } else {
                 console.log("ADD to dm response: " + res);
               }
+              res.status(200).send(JSON.stringify(appDescr));
             });
-            res.status(200).send(JSON.stringify(appDescr));
           }
         });
       }
@@ -589,8 +589,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                 } else {
                   console.log("RAMOVE from dm response: " + response);
                 }
+		res.status(200).send("Instance is deleted.");
               });
-              res.status(200).send("Instance is deleted.");
             }
           });
 
@@ -714,8 +714,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                           } else {
                             console.log("update on dm response: " + response);
                           }
+			  res.status(200).send(JSON.stringify(appDescr));
                         });
-                        res.status(200).send(JSON.stringify(appDescr));
                     }
                 });
             }
