@@ -130,11 +130,11 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             res.status(500).send(err.toString());
           } else {
             appDescr.status = appStatus;
-            dm.addAppInfo(appDescr, function(err, res){
+            dm.addAppInfo(appDescr, function(err, ress){
               if(err) {
                 console.log(err.toString());
               } else {
-                console.log("ADD to dm response: " + res);
+                console.log("ADD to dm response: " + ress);
               }
               res.status(200).send(JSON.stringify(appDescr));
             });
