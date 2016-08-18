@@ -9,9 +9,12 @@ var log_file = fs.createWriteStream("./debug.log", {flag : "w"});
 //console.log("cwd: " +process.cwd());
 
 process.on("uncaughtException", function(error){
-  console.err(error.toString());
-  var instanceLog = fs.readFileSync("./debug.log", "utf8");
-  throw new Error(instanceLog);
+  ////console.err(error.toString());
+  //console.err(error.stack);
+  fs.appendFileSync("./debug.log", error.stack, "utf8");
+  ////var instanceLog = fs.readFileSync("./debug.log", "utf8");
+  ///throw new Error(instanceLog);
+  throw error;
 });
 
 var log_stdout = process.stdout;
@@ -29,10 +32,22 @@ console.err = function(d){
 }
 
 app.listen(process.argv[2], function(){
+
+  var iotApp = express.Router();
+
+  require("./agent")(iotApp);
+  
+  require("./" + process.argv[3])(iotApp);
+
+  require("./agentserver_handlers")(app, iotApp);
+
+  app.use("/api", iotApp);
+
+
   //console.log("Exress app listening on port " + process.argv[2]);
-  var src = fs.readFileSync("./" + process.argv[3], "utf8");
-  eval(src);
+  //var src = fs.readFileSync("./" + process.argv[3], "utf8");
+  //eval(src);
   //console.log(src);
-  var agent = createAgentObject();
-  require("./agentserver_handlers")(app, agent);
+  //var agent = createAgentObject();
+  //require("./agentserver_handlers")(app, agent);
 });

@@ -6,3 +6,6 @@
 .DS_Store
 config.txt
 npm-debug.log
+nohup.out
+dm-config.txt
+backend-config.txt

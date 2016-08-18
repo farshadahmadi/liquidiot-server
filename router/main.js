@@ -1,4 +1,4 @@
-/**
+  /**
  * Copyright (c) TUT Tampere University of Technology 2015-2016
  * All rights reserved.
  *
@@ -64,21 +64,28 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   });
 
   app.use("/app/:aid/api", function(req, res){
-    var aid = parseInt(req.params.aid);
-    console.log("reqUrl " + req.url);
-    var url = "http://localhost:" + ports[aid] + req.url;
-    console.log(url);
-    req.pipe(request(url)).pipe(res);
-  });
 
-  /*app.use("/app/:aid/instance/:iid/api", function(req, res){
     var aid = parseInt(req.params.aid);
-    var iid = parseInt(req.params.iid);
-    console.log("reqUrl " + req.url);
-    var url = "http://localhost:" + ports[iid] + req.url;
-    console.log(url);
-    req.pipe(request(url)).pipe(res);
-  });*/
+    // Here "/api" is added to the request base path url.
+    // For example if "/app/<aid>/api/sayHello" is called, the request will be redirected to
+    // "http://localhost:<app-port>/api/sayHello"
+    var appBasePath = "/api";
+    getAppDescr(aid, function(err, appDescr){
+        if(err) {
+            res.status(404).send(err.toString());
+        } else {
+            if(appDescr.status === "running"){
+                console.log("reqUrl " + req.url);
+                var url = "http://localhost:" + ports[aid] + "/api" + req.url;
+                console.log(url);
+                req.pipe(request(url)).pipe(res);
+            } else {
+                var message = {"message":"application is not running"};
+                res.status(404).send(JSON.stringify(message));
+            }
+        }
+    });
+  });
 
 ///////////////////////////////////////////////////////////////////
 ////////////// app Related Functions - START //////////////////////
@@ -124,14 +131,14 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             res.status(500).send(err.toString());
           } else {
             appDescr.status = appStatus;
-            dm.addAppInfo(appDescr, function(err, res){
+            dm.addAppInfo(appDescr, function(err, ress){
               if(err) {
                 console.log(err.toString());
               } else {
-                console.log("ADD to dm response: " + res);
+                console.log("ADD to dm response: " + ress);
               }
+              res.status(200).send(JSON.stringify(appDescr));
             });
-            res.status(200).send(JSON.stringify(appDescr));
           }
         });
       }
@@ -233,16 +240,12 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
         }).filter(function(file){
           return (fs.statSync(file).isDirectory());
         }).forEach(function(file){
-
           fs.readFile(file + "/package.json", "utf8", function(err, src){
             if(err) {
                 callback(err);
             } else {
               try{
                 var appDescr = JSON.parse(src);
-                //appDescription.id = parseInt(aid);
-                //console.log("app Description: " + JSON.stringify(appDescription));
-                
                 if(appDescr.main) {
                     fs.stat(file + "/" + appDescr.main, function(err, stat){
                         if(err){
@@ -254,8 +257,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                                 } else {
                                   try{
                                     var liquidiotJson = JSON.parse(src);
-                                    if(liquidiotJson.classes) {
-                                      appDescr.classes = liquidiotJson.classes;
+				    console.log("liquidiotJson: " + liquidiotJson);
+                                    if(liquidiotJson.applicationInterfaces) {
+                                      appDescr.applicationInterfaces = liquidiotJson.applicationInterfaces;
                                       callback(null, appDescr);
                                     } else {
                                       callback(new Error("Package.json format is incorrect. No Main entry."));
@@ -318,110 +322,6 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       }
     });
   }
-
-/*
-  function extractTarFile(aid, callback) {
-    var tarFile = "./app/" + aid + "/" + aid + ".tgz";
-    var target = "./app/" + aid;
-
-    fs.createReadStream(tarFile)
-                 .on("error", function(err){ callback(err); })
-                 .pipe(zlib.Gunzip())
-                 .pipe(tar.Extract({ path : target }))
-                 .on("end", function(){ callback(); });
-  }
-
-  function extractAppDescription(aid, callback) {
-    var appDir = "./app/" + aid + "/";
-    fs.readdir(appDir, function(err, files){
-      if(err){
-            callback(err);
-      } else {
-        files.map(function(file){
-          return path.join(appDir, file);
-        //}).filter(function(file){
-          //return (fs.statSync(file).isDirectory() && file !== "instance");
-        }).forEach(function(file){
-          fs.readFile(file + "/package.json", "utf8", function(err, src){
-            if(err) {
-                callback(err);
-            } else {
-              try{
-                var appDescr = JSON.parse(src);
-                if(appDescr.main) {
-                    fs.stat(file + "/" + appDescr.main, function(err, stat){
-                        if(err){
-                            callback(err);
-                        } else {
-                            fs.readFile(file + "/liquidiot.json", "utf8", function(err, src){
-                                if(err){
-                                  callback(err);
-                                } else {
-                                  try{
-                                    var liquidiotJson = JSON.parse(src);
-                                    if(liquidiotJson.classes) {
-                                      appDescr.classes = liquidiotJson.classes;
-                                      callback(null, appDescr);
-                                    } else {
-                                      callback(new Error("Package.json format is incorrect. No Main entry."));
-                                    }
-                                  } catch(error){
-                                    callback(error);
-                                  }
-                                }
-                            });
-                        }
-                    });
-                } else {
-                    callback(new Error("Package.json format is incorrect. No Main entry."));
-                }
-              } catch(error){
-                callback(error);
-              }
-            }
-          });
-        });
-      }
-    });
-  }
-
-  function copyFilesToAppDir(aid, callback){
-    var appDir = "./app/" + aid + "/";
-    var appTarFile = aid + ".tgz";
-    
-    fs.readdir(appDir, function(err, files){
-      if(err){
-            callback(err);
-      } else {
-        files.map(function(file){
-          return path.join(appDir, file);
-        //}).filter(function(file){
-          //return (fs.statSync(file).isDirectory() && file !== "instance");
-        }).forEach(function(file){
-          ncp(file, appDir, function(err){
-            if(err){
-              callback(err);
-            } else {
-              rimraf(file, function(err){
-                if(err){
-                  callback(err);
-                } else {
-                  rimraf(appDir + appTarFile, function(err){
-                    if(err){
-                      callback(err);
-                    } else {
-                      callback(null);
-                    }
-                  });
-                }
-              });
-            }
-          });
-        });
-      }
-    });
-  }
-*/
 
   app.get("/app", function(req, res) {
     var resString = JSON.stringify(apps);
@@ -519,13 +419,23 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 ///////////////////////////////////////////////////////////////////
 
   function getAppDescr(aid, callback){
-      for(var i in apps){
+      //for(var i in apps){
+      for(var i = 0; i < apps.length; i++){
           if(apps[i].id === aid){
               callback(null, apps[i]);
               return;
           }
       }
       callback(new Error("App not found."));
+  }
+
+  function appIndexOf(searchTerm, property){
+      for(var i = 0; i < apps.length; i++){
+          if(apps[i][property] === searchTerm){
+              return i;
+          }
+      }
+      return -1;
   }
 
   function instanciate(appDescr, callback) {
@@ -607,14 +517,22 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     allInstances[aid] = child;
 
     child.stdout.on("data", function(data){
-      console.log("stdout: " + data);
+      console.log("stdout: " + data + " : " + typeof(data));
+      var info = String(data);
+      var arrayStr = info.split("\n");
+      var isAppStarted = arrayStr.indexOf("app-started-without-error");
+      //if(isAppStarted != -1){
+          //console.log("yes");
+      //}
       
-      if(appDescr.status == "initializing"){
+      if(appDescr.status == "initializing" && isAppStarted != -1){
         appDescr.status = "running";
+        console.log("from init to running");
         callback(null, "running");
-      } else {
-        appDescr.status = "running";
-      }
+      } //else {
+        //appDescr.status = "running";
+        //console.log("set to running");
+      //}
     });
   
     child.stderr.on("data", function(data){
@@ -672,8 +590,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                 } else {
                   console.log("RAMOVE from dm response: " + response);
                 }
+		res.status(200).send("Instance is deleted.");
               });
-              res.status(200).send("Instance is deleted.");
             }
           });
 
@@ -741,8 +659,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     var url = "http://localhost:" + ports[aid] + "/";
     console.log("url: " + url);
     request.get(url, function(err, res, body){
-    console.log("body " + body);
-    console.log(res.statusCode);
+        console.log("body " + body);
+        console.log(res.statusCode);
         if(err) {
             callback(err);
         } else if(res.statusCode == 200){
@@ -790,14 +708,15 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                         res.status(500).send(err.toString());
                     } else {
                         appDescr.status = appStatus;
+                        //var appIndex = appIndexOf(aid, "id");
                         dm.updateAppInfo(appDescr, function(err, response){
                           if(err){
                             console.log("update erro: " + err.toString());
                           } else {
                             console.log("update on dm response: " + response);
                           }
+			  res.status(200).send(JSON.stringify(appDescr));
                         });
-                        res.status(200).send(JSON.stringify(appDescr));
                     }
                 });
             }

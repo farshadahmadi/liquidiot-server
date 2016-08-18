@@ -1,7 +1,7 @@
 
 "use strict"
 
-module.exports = function(app, agent) {
+module.exports = function(server, iotApp) {
 
   var fs = require("fs");
 	
@@ -14,17 +14,10 @@ module.exports = function(app, agent) {
   }
 	
   status.status = "running";
-  agent.start(function(err){
-    if(err){
-      console.log("(server) Agent can not start: " + err.toString());
-      status.status = "paused";
-      throw err;
-    } else {
-      console.log("(server) Agent Started without error. ");
-    }
-  });
+  iotApp.start();
+  //console.log("ejra mishe");
 
-  app.put("/", function(req, res){
+  server.put("/", function(req, res){
     var data = "";
     req.on("data", function(chunk){
       data += chunk;
@@ -44,29 +37,22 @@ module.exports = function(app, agent) {
       respond(res, 204, JSON.stringify(status));
     } else {
       status.status = "running";
-      agent.start(function(err){
-          if(err){
-              console.log("Agent can not start:" + err.toString());
-              status.status = "paused";
-              throw err;
-              respond(res, 500, err.toString());
-          }
-      });
+      iotApp.start();
       respond(res, 200, JSON.stringify(status));
     }
   }
 
   function stop(res) {
-    if(agent && status.status === "running") {
-      agent.stop();
+    if(iotApp && status.status === "running") {
       status.status = "paused";
+      iotApp.stop();
       respond(res, 200, JSON.stringify(status));
     } else {
       respond(res, 204);
     }
   }
 
-  app.get("/", function(req, res) {
+  server.get("/", function(req, res) {
     respond(res, 200, JSON.stringify(status));
   });
 
