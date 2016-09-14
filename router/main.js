@@ -135,6 +135,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   });
 
   app.use("/app/:aid/api", function(req, res){
+
     var aid = parseInt(req.params.aid);
     // Here "/api" is added to the request base path url.
     // For example if "/app/<aid>/api/sayHello" is called, the request will be redirected to

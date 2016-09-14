@@ -12,6 +12,12 @@ var request = require("request");
 var express = require("express");
 var app = express();
 
+/*<<<<<<< HEAD
+var deviceManagerUrl = "http://192.168.1.10:3000/";
+var backendUrl = "https://farshadahmadi:4liquidIoTProject@my.iot-ticket.com/api/v1/devices"
+
+=======
+>>>>>>> dev*/
 
 getDeviceInfo(function(err, deviceInfo){
     if(err){
