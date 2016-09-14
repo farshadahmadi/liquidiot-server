@@ -36,6 +36,73 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
   var templatesDir = "./agentServerTemplateFiles/";
 
+
+  var deviceUp = false;
+
+  fs.readFile("./config.txt", "utf8", function(err, data){
+    if(err){
+      console.log(err.toString());
+    } else {
+      var device = JSON.parse(data);
+      var deviceId = device.idFromDM;
+      console.log(deviceId);
+
+      request.get(deviceManagerUrl + 'devices/id/' + deviceId, function(err, res, body){
+        console.log("body " + body);
+        console.log(res.statusCode);
+        if(err) {
+            console.log(err.toString());
+        } else if(res.statusCode == 200){
+	  var deviceApps = JSON.parse(body).apps;
+	  console.log(deviceApps);
+
+          var appsProcessed = 0;
+
+	  if(deviceApps.length == 0){
+            deviceUp = true;
+          }
+
+          deviceApps.forEach(function(appDescr, index, array){
+
+            //var appDescr = JSON.parse(JSON.stringify(app));
+            appDescr.targetStatus = appDescr.status;
+            appDescr.status = "initializing";
+
+            instanciate(appDescr, function(err, appStatus){
+              if(err) {
+                console.log(err.toString());
+              } else {
+                if(appStatus === "running" && appDescr.targetStatus === "paused"){
+                  var targetState = { status: appDescr.targetStatus};
+                  startOrStopInstance(targetState, appDescr.id, function(err, appStatus){
+                    if(err){
+                      console.log(err.toString());
+                    } else {
+                      console.log("app went to paused status");
+                    }
+                    apps.push(appDescr);
+                    console.log(JSON.stringify(appDescr));
+                    appsProcessed++;
+                    if(appsProcessed === array.length){
+                      deviceUp = true;
+                    }
+                  });
+                } else {
+                  apps.push(appDescr);
+                  console.log(JSON.stringify(appDescr));
+                  appsProcessed++;
+                  if(appsProcessed === array.length){
+                    deviceUp = true;
+                  }
+                }
+              }
+            });
+          });
+        }
+      });
+    }
+  });
+
   app.use(function(req, res, next){
     var flag = false;
     //if(req.headers.origin === "http://koodain.herokuapp.com"){
@@ -55,10 +122,14 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
         res.header('Access-Control-Max-Age', 60 * 60 * 24 * 365);
     }
 
-    if(flag && req.method === "OPTIONS"){
-      res.sendStatus(200);
-    } else {
-      next();
+    if(!deviceUp){
+      res.status(500).send("Device is not yet up and running");
+    } else{ 
+      if(flag && req.method === "OPTIONS"){
+        res.sendStatus(200);
+      } else {
+        next();
+      }
     }
 
   });
@@ -167,7 +238,13 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                           if(err){
                             callback(err);
                           } else {
-                            callback(null, appDescription);
+          		    createAppServerFiles(aid, function(err){
+                              if(err) {
+                                callback(err);
+                              } else {
+                                callback(null, appDescription);
+                              }
+                            });
                           }
                         });
                      }
@@ -322,6 +399,20 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     });
   }
 
+  function createAppServerFiles(appId, callback) {
+
+    var aid = appId;
+    var appDir = "./app/" + aid + "/";
+
+    ncp(templatesDir, appDir, function(err){
+        if(err){
+            callback(err)
+        } else {
+            callback();
+        }
+    }); 
+  }
+
   app.get("/app", function(req, res) {
     var resString = JSON.stringify(apps);
     res.status(200).send(resString);
@@ -456,7 +547,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
 
           console.log("2.port:" + port);
-          createAppServerFiles(appDescr, function(err){
+          /*createAppServerFiles(appDescr, function(err){
             if(err) {
               delete reservedPorts[port];
               delete ports[aid];
@@ -474,6 +565,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
               });
               //callback(null);
             }
+          });*/
+          createAppServer(aid, appDescr, port, function(err, appStatus){
+            callback(null, appStatus);
           });
         } else {
           instanciate(appDescr, callback);
@@ -484,7 +578,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     });
   }
 
-  function createAppServerFiles(appDescr, callback) {
+/*  function createAppServerFiles(appDescr, callback) {
 
     var aid = appDescr.id;
     var appDir = "./app/" + aid + "/";
@@ -497,6 +591,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
         }
     }); 
   }
+
+*/
 
   function createAppServer(aid, appDescr, port, callback){
     var appDir = "./app/" + aid + "/";
@@ -702,35 +798,38 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             if(appDescr.status == "crashed" || appDescr.status == "initializing"){
                 res.status(500).send(JSON.stringify(appDescr))
             } else {
-                startOrStopInstance(req, res, aid, function(err, appStatus){
-                    if(err){
-                        res.status(500).send(err.toString());
-                    } else {
-                        appDescr.status = appStatus;
-                        //var appIndex = appIndexOf(aid, "id");
-                        dm.updateAppInfo(appDescr, function(err, response){
-                          if(err){
-                            console.log("update erro: " + err.toString());
-                          } else {
-                            console.log("update on dm response: " + response);
-                          }
-			  res.status(200).send(JSON.stringify(appDescr));
-                        });
-                    }
+              var data = "";
+
+              req.on("data", function(chunk){
+                data += chunk;
+              });
+
+              req.on("end", function(){
+                var targetState = JSON.parse(data);
+                startOrStopInstance(targetState, aid, function(err, appStatus){
+                  if(err){
+                    res.status(500).send(err.toString());
+                  } else {
+                    appDescr.status = appStatus;
+                    //var appIndex = appIndexOf(aid, "id");
+                    dm.updateAppInfo(appDescr, function(err, response){
+                      if(err){
+                        console.log("update erro: " + err.toString());
+                      } else {
+                        console.log("update on dm response: " + response);
+                      }
+	                res.status(200).send(JSON.stringify(appDescr));
+                    });
+                  }
                 });
-            }
+              });
+           }
         }
     });
   });
 
-  function startOrStopInstance(req, res, aid, callback){
-    var data = "";
-    req.on("data", function(chunk){
-      data += chunk;
-    });
-    req.on("end", function(){
-      try {
-        var targetState = JSON.parse(data);
+  function startOrStopInstance(targetState, aid, callback){
+
         var url = "http://localhost:" + ports[aid] + "/";
 
         var options = {
@@ -756,12 +855,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
         } else {
             callback(new Error("The content of request should be running or paused"));
         }
-      } catch(e) {
-          callback(e);
-      }
-    });
   }
-
 
 ///////////////////////////////////////////////////////////////////
 //////// Specific Instance Related Functions - END ////////////////

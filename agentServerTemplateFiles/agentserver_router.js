@@ -4,7 +4,7 @@ var util = require("util");
 var express = require('express');
 var app = express();
 
-var log_file = fs.createWriteStream("./debug.log", {flag : "w"});
+var log_file = fs.createWriteStream("./debug.log", {flags : "a"});
 
 //console.log("cwd: " +process.cwd());
 
