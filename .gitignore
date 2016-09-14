@@ -9,3 +9,6 @@ npm-debug.log
 nohup.out
 dm-config.txt
 backend-config.txt
+demo.log
+start.sh
+stop.sh
