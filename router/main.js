@@ -29,6 +29,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   var upload = multer({dest:'./uploads/'});
   var dm = require("./dm")(deviceManagerUrl, deviceInfo);
 
+  var proxy = require("express-http-proxy");
+
   var reservedPorts = [];
   var allInstances = [];
   var apps = [];
@@ -58,46 +60,47 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
           var appsProcessed = 0;
 
-	  if(deviceApps.length == 0){
+	  if(!deviceApps || deviceApps.length == 0){
             deviceUp = true;
-          }
+          } else {
 
-          deviceApps.forEach(function(appDescr, index, array){
+            deviceApps.forEach(function(appDescr, index, array){
+  
+              //var appDescr = JSON.parse(JSON.stringify(app));
+              appDescr.targetStatus = appDescr.status;
+              appDescr.status = "initializing";
 
-            //var appDescr = JSON.parse(JSON.stringify(app));
-            appDescr.targetStatus = appDescr.status;
-            appDescr.status = "initializing";
-
-            instanciate(appDescr, function(err, appStatus){
-              if(err) {
-                console.log(err.toString());
-              } else {
-                if(appStatus === "running" && appDescr.targetStatus === "paused"){
-                  var targetState = { status: appDescr.targetStatus};
-                  startOrStopInstance(targetState, appDescr.id, function(err, appStatus){
-                    if(err){
-                      console.log(err.toString());
-                    } else {
-                      console.log("app went to paused status");
-                    }
+              instanciate(appDescr, function(err, appStatus){
+                if(err) {
+                  console.log(err.toString());
+                } else {
+                  if(appStatus === "running" && appDescr.targetStatus === "paused"){
+                    var targetState = { status: appDescr.targetStatus};
+                    startOrStopInstance(targetState, appDescr.id, function(err, appStatus){
+                      if(err){
+                        console.log(err.toString());
+                      } else {
+                        console.log("app went to paused status");
+                      }
+                      apps.push(appDescr);
+                      console.log(JSON.stringify(appDescr));
+                      appsProcessed++;
+                      if(appsProcessed === array.length){
+                        deviceUp = true;
+                      }
+                    });
+                  } else {
                     apps.push(appDescr);
                     console.log(JSON.stringify(appDescr));
                     appsProcessed++;
                     if(appsProcessed === array.length){
                       deviceUp = true;
                     }
-                  });
-                } else {
-                  apps.push(appDescr);
-                  console.log(JSON.stringify(appDescr));
-                  appsProcessed++;
-                  if(appsProcessed === array.length){
-                    deviceUp = true;
                   }
                 }
-              }
+              });
             });
-          });
+	  }
         }
       });
     }
@@ -133,7 +136,6 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     }
 
   });
-
   app.use("/app/:aid/api", function(req, res){
 
     var aid = parseInt(req.params.aid);
@@ -149,7 +151,12 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                 console.log("reqUrl " + req.url);
                 var url = "http://localhost:" + ports[aid] + "/api" + req.url;
                 console.log(url);
-                req.pipe(request(url)).pipe(res);
+                req.pipe(request(url))
+                .on('error', function(err){
+                  console.log(err.toString());
+                  res.status(500).send(err.toString());
+                })
+                .pipe(res);
             } else {
                 var message = {"message":"application is not running"};
                 res.status(404).send(JSON.stringify(message));
