@@ -29,8 +29,6 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   var upload = multer({dest:'./uploads/'});
   var dm = require("./dm")(deviceManagerUrl, deviceInfo);
 
-  var proxy = require("express-http-proxy");
-
   var reservedPorts = [];
   var allInstances = [];
   var apps = [];
