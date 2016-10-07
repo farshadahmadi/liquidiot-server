@@ -5,7 +5,9 @@
 *.swp
 .DS_Store
 config.txt
-npm-debug.log
+npm-debug.log*
+err.log
+out.log
 nohup.out
 dm-config.txt
 backend-config.txt

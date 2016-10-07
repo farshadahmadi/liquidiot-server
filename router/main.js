@@ -188,12 +188,6 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
         });
   }
 
-  app.delete("/", function(req, res){
-    spawn("shutdown", ["now"]);
-    spawn("sudo", ["shutdown", "now"]);
-  });
- 
-
   // This method is called for deployment of application. The application should be packed
   // in tarball in .tgz format.
   app.post("/app", upload.single("filekey"), function(req, res) {
