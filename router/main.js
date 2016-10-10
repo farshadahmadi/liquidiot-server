@@ -611,7 +611,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     console.log("availabe port at: " + port);
     //var spawn = require("child_process").spawn;
     //var child = spawn("node", [instanceDir + startServerFile, port], {cwd : instanceDir});
-    var child = spawn("node", ["./" + startServerFile, port, appDescr.main], {cwd : appDir});
+    var child = spawn("node", ["./" + startServerFile, port, appDescr.main, deviceManagerUrl], {cwd : appDir});
     //var execForCreateServer = require("child_process").exec;
     //var child = execForCreateServer("node " + instanceDir + "agentserver_router.js " + portt.toString(), 
     //                                         function(err, stdout, stderr){

@@ -33,21 +33,20 @@ console.err = function(d){
 
 app.listen(process.argv[2], function(){
 
-  var iotApp = express.Router();
+  var iotApp = {};
+  iotApp.internal = {};
 
-  require("./agent")(iotApp);
+  iotApp.internal.router = express.Router();
+
+  require("./agentserver_request")(iotApp.internal, process.argv[4]);
+
+  require("./agent")(iotApp.internal);
   
   require("./" + process.argv[3])(iotApp);
 
-  require("./agentserver_handlers")(app, iotApp);
+  require("./agentserver_handlers")(app, iotApp.internal);
 
-  app.use("/api", iotApp);
+  app.use("/api", iotApp.internal.router);
 
-
-  //console.log("Exress app listening on port " + process.argv[2]);
-  //var src = fs.readFileSync("./" + process.argv[3], "utf8");
-  //eval(src);
-  //console.log(src);
-  //var agent = createAgentObject();
-  //require("./agentserver_handlers")(app, agent);
 });
+
