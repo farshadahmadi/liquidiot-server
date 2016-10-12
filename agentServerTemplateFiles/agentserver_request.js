@@ -87,5 +87,4 @@ module.exports  = function(deviceManagerUrl){
   }
 
   return $request;
-
 }
