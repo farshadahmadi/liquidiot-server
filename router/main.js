@@ -188,6 +188,12 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
         });
   }
 
+  app.delete("/", function(req, res){
+    spawn("shutdown", ["now"]);
+    spawn("sudo", ["shutdown", "now"]);
+  });
+
+
   // This method is called for deployment of application. The application should be packed
   // in tarball in .tgz format.
   app.post("/app", upload.single("filekey"), function(req, res) {
@@ -535,7 +541,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
   function instanciate(appDescr, callback) {
     var aid = appDescr.id;
-    portscanner.findAPortNotInUse(8001, 9000, "127.0.0.1", function(err, port){
+    portscanner.findAPortNotInUse(deviceInfo.startportrage, deviceInfo.endportrage, "127.0.0.1", function(err, port){
       if(!err) {
         console.log("before:" + reservedPorts[port]);
         console.log("port: " + port);
@@ -605,7 +611,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     console.log("availabe port at: " + port);
     //var spawn = require("child_process").spawn;
     //var child = spawn("node", [instanceDir + startServerFile, port], {cwd : instanceDir});
-    var child = spawn("node", ["./" + startServerFile, port, appDescr.main], {cwd : appDir});
+    var child = spawn("node", ["./" + startServerFile, port, appDescr.main, deviceManagerUrl], {cwd : appDir});
     //var execForCreateServer = require("child_process").exec;
     //var child = execForCreateServer("node " + instanceDir + "agentserver_router.js " + portt.toString(), 
     //                                         function(err, stdout, stderr){

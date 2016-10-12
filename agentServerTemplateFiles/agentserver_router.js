@@ -6,14 +6,9 @@ var app = express();
 
 var log_file = fs.createWriteStream("./debug.log", {flags : "a"});
 
-//console.log("cwd: " +process.cwd());
 
 process.on("uncaughtException", function(error){
-  ////console.err(error.toString());
-  //console.err(error.stack);
   fs.appendFileSync("./debug.log", error.stack, "utf8");
-  ////var instanceLog = fs.readFileSync("./debug.log", "utf8");
-  ///throw new Error(instanceLog);
   throw error;
 });
 
@@ -33,21 +28,36 @@ console.err = function(d){
 
 app.listen(process.argv[2], function(){
 
-  var iotApp = express.Router();
+  var iotApp = {};
+  //iotApp.internal = {};
+
+  var $router = express.Router();
+
+  //iotApp.$router = express.Router();
+
+  var $request = require("./agentserver_request")(process.argv[4]);
 
   require("./agent")(iotApp);
   
-  require("./" + process.argv[3])(iotApp);
+  require("./" + process.argv[3])(iotApp, $router, $request);
 
   require("./agentserver_handlers")(app, iotApp);
 
-  app.use("/api", iotApp);
+  app.use("/api", $router);
+  
+ /* var iotApp = {};
+  iotApp.internal = {};
 
+  iotApp.internal.router = express.Router();
 
-  //console.log("Exress app listening on port " + process.argv[2]);
-  //var src = fs.readFileSync("./" + process.argv[3], "utf8");
-  //eval(src);
-  //console.log(src);
-  //var agent = createAgentObject();
-  //require("./agentserver_handlers")(app, agent);
+  require("./agentserver_request")(iotApp.internal, process.argv[4]);
+
+  require("./agent")(iotApp.internal);
+  
+  require("./" + process.argv[3])(iotApp);
+
+  require("./agentserver_handlers")(app, iotApp.internal);
+
+  app.use("/api", iotApp.internal.router);*/
+
 });
