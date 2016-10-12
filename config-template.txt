@@ -1,4 +1,4 @@
 This configuration template is for a device that measures temperature:
-{"name":"TemperatureDevice","manufacturer":"RPi","libraries":{"ds18x20":"0.2.0"},"location":"TE113","url":"http://130.230.140.157:8082","port":"8082","startportrage":"8001","endportrange":"9000","connected-devices":{"temp-sensor":{"model":"ds18b20"}},"idFromBackend":"","idFromDM":""}
+{"name":"TemperatureDevice","manufacturer":"RPi","libraries":{"ds18x20":"0.2.0"},"location":"TE113","url":"http://130.230.140.157:8082","port":8082,"startportrange":8001,"endportrange":9000,"connected-devices":{"temp-sensor":{"model":"ds18b20"}},"idFromBackend":"","idFromDM":""}
 This configuration template is for a device that plays sound:
-{"name":"SoundDevice","manufacturer":"RPi","libraries":{"lame":"1.2.3","speaker":"0.2.6"},"location":"TE113","url":"http://130.230.140.157:8081","port":"8082","startportrage":"8001","endportrange":"9000","connected-devices":{"speaker":{"model":"typhoon"}},"idFromBackend":"","idFromDM":""}
+{"name":"SoundDevice","manufacturer":"RPi","libraries":{"lame":"1.2.3","speaker":"0.2.6"},"location":"TE113","url":"http://130.230.140.157:8081","port":8082,"startportrange":8001,"endportrange":9000,"connected-devices":{"speaker":{"model":"typhoon"}},"idFromBackend":"","idFromDM":""}

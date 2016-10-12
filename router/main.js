@@ -198,7 +198,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   // in tarball in .tgz format.
   app.post("/app", upload.single("filekey"), function(req, res) {
     // creating the specific id for application
-    var aid = ((new Date()).getTime()) % 1000000;
+    //var aid = ((new Date()).getTime()) % 1000000;
+    var aid = Math.floor(Math.random() * 1000000);
     installApp(req, aid, function(err, appDescr){
       if(err) {
         res.status(500).send(err.toString());
@@ -541,7 +542,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
   function instanciate(appDescr, callback) {
     var aid = appDescr.id;
-    portscanner.findAPortNotInUse(deviceInfo.startportrage, deviceInfo.endportrage, "127.0.0.1", function(err, port){
+    portscanner.findAPortNotInUse(deviceInfo.startportrange, deviceInfo.endportrange, "127.0.0.1", function(err, port){
       if(!err) {
         console.log("before:" + reservedPorts[port]);
         console.log("port: " + port);
