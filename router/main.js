@@ -792,7 +792,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                 if(err){
                     res.status(500).send(err.toString());
                 } else {
-                    res.status(200).send(data);
+                    var mes = {message: data};
+                    //res.status(200).send(data);
+                    res.status(200).send(JSON.stringify(mes));
                 }
             });
         }

@@ -3,23 +3,45 @@
 
 module.exports  = function(deviceManagerUrl){
 
-  //var $request = {};
-
-  var request = require("request");
+  var request = require("request-promise");
   var slick = require("slick");
 
-  var $request = function(options, cb){
+  function CustomError(msg, reason){
+    this.message = msg;
+    this.reason = reason;
+  }
+  CustomError.prototype = new Error();
 
-    if(typeof options !== 'object'){
-      cb(new Error("The first argument of request function must be an opject"));
-    } else if(options.hasOwnProperty("url")){
-      request(options, cb);
-    } else if(options.hasOwnProperty("app")){
+  function reqPromise(devUrl, app, options){
 
-    try{
-      checkAppQuery(options.app);
+    var url = devUrl + "/app/" + app.id + "/api";
+    if(options.path){
+      url += options.path;
+    }
 
+    options.url = url;
+    options.timeout = options.timeout || 5000;
+    
+    return request(options)
+          .then(function(response){
+            return response;
+          })
+          .catch(function(err){
 
+            if(!options.successCriteria || options.successCriteria === "all" ){
+              throw err;
+            } else if (options.successCriteria === "some") {
+              return err;
+            } else {
+              throw new Error( options.successCriteria + " is not a valid value for options.mode");
+            }
+          });
+  }
+
+  var $request = function(options) {
+    
+    if(typeof options == 'object' && options.hasOwnProperty("app")){
+      
       var opt = {
         url: deviceManagerUrl, // url of the Resource Registry (AKA device manager)
         qs: {
@@ -29,39 +51,49 @@ module.exports  = function(deviceManagerUrl){
         }
       };
 
-      request(opt, function(err, res, body){
-        if(err){
-          console.log(err);
-          cb(err);
-        } else {
-          var devices = JSON.parse(body);
+      return request(opt).
+        then(function(res){
+
+          checkAppQuery(options.app);
+          
+          var devices = JSON.parse(res);
           if(!devices || devices.length == 0){
-            cb(new Error("No app is found with the given app query."));
-            return;
+            throw new Error("No app was found with " + options.app + " as options.app value.");
           }
-          var orgOpt = JSON.parse(JSON.stringify(options));
-          delete orgOpt.app;
-          delete orgOpt.device;
-          delete orgOpt.path;
-          var url = devices[0].url+"/app/"+devices[0].matchedApps[0].id+"/api";
-          if(options.path){
-            url += options.path;
+          
+          var reqPromises = [];
+
+          for(var i = 0; i < devices.length; i++){
+            for(var j = 0; j < devices[i].matchedApps.length; j++){
+              reqPromises.push(reqPromise(devices[i].url, devices[i].matchedApps[j], options));
+            }
           }
-          var opt1 = {
-            url: url,
-            method: options.method
-	  }
-          if(!options.method){
-            opt1.method = "GET";
-          }
-          request(opt1, cb);
-        }
-      });
-    } catch(e){
-      cb(e);
-    }
+
+          return Promise.all(reqPromises)
+            .then(function(response){
+
+              var res = {
+                successes: [],
+                failures: []
+              };
+
+              response.forEach(function(value){
+                if(value instanceof Error){
+                  res.failures.push(value);
+                } else {
+                  res.successes.push(value);
+                }
+              });
+
+              if(res.successes.length == 0){
+                throw new CustomError("None of requests were succeeded", res);
+              }
+
+              return res;
+            });
+        });
     } else {
-      cb(new Error("the options argument (first argument) of request must have either url or app property"));
+      return request(options);
     }
   }
 
@@ -82,7 +114,7 @@ module.exports  = function(deviceManagerUrl){
     }
 
     if(!s[0][0].classList || s[0][0].classList.length != 1){
-      throw new Error("'app' property of 'options' object (used in request function) must contain one API");
+      throw new Error("app property of options object (used in request function) must contain one API");
     }
   }
 
