@@ -1,33 +1,42 @@
+'use strict'
+
+module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter){
+
 var fs = require("fs");
 var util = require("util");
 
 var express = require('express');
-var app = express();
+//var app = express();
 
-var log_file = fs.createWriteStream("./debug.log", {flags : "a"});
+var log_file = fs.createWriteStream(cwd + "debug.log", {flags : "a"});
 
 
-process.on("uncaughtException", function(error){
+/*process.on("uncaughtException", function(error){
   fs.appendFileSync("./debug.log", error.stack, "utf8");
+  error.appDescription = appDescr;
   throw error;
-});
+});*/
 
-var log_stdout = process.stdout;
-var log_stderr = process.stderr;
+//var log_stdout = process.stdout;
+//var log_stderr = process.stderr;
 
+var logger = {};
 
-console.log = function(d){
+logger.log = function(d){
+  console.log(d);
   log_file.write(util.format(d) + "\n");
-  log_stdout.write(util.format(d) + "\n");
+  //log_stdout.write(util.format(d) + "\n");
 }
 
-console.err = function(d){
-  log_file.write(util.format(d) + "\n");
-  log_stderr.write(util.format(d) + "\n");
-}
+//console.err = function(d){
+  //log_file.write(util.format(d) + "\n");
+  //log_stderr.write(util.format(d) + "\n");
+//}
 
-app.listen(process.argv[2], function(){
+var exAppServer = exApp.listen(port, function(){
 
+  exApp.server = exAppServer;
+  
   var iotApp = {};
   //iotApp.internal = {};
 
@@ -35,15 +44,20 @@ app.listen(process.argv[2], function(){
 
   //iotApp.$router = express.Router();
 
-  var $request = require("./agentserver_request")(process.argv[4]);
+  var $request = require("./agentserver_request")(RRUrl);
 
-  require("./agent")(iotApp);
+  require("./agent")(iotApp, emitter);
   
-  require("./" + process.argv[3])(iotApp, $router, $request);
+  require("./" + appDescr.main)(iotApp, $router, $request, logger);
+  
+  exApp.use("/api", $router);
 
-  require("./agentserver_handlers")(app, iotApp);
+  require("./agentserver_handlers")(exApp, exAppServer, iotApp);
 
-  app.use("/api", $router);
+
+
+
+  //server.close();
   
  /* var iotApp = {};
   iotApp.internal = {};
@@ -61,4 +75,8 @@ app.listen(process.argv[2], function(){
   app.use("/api", iotApp.internal.router);*/
 
 });
+
+//return exAppServer;
+
+}
 

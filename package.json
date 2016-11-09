@@ -22,6 +22,7 @@
     "rimraf": "^2.4.3",
     "routes": "^2.1.0",
     "slick": "^1.12.2",
+    "stacktrace-parser": "^0.1.4",
     "tar": "^2.2.1",
     "tar-fs": "^1.8.1",
     "tar.gz": "^1.0.2",
