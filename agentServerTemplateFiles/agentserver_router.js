@@ -39,7 +39,7 @@ app.listen(process.argv[2], function(){
 
   require("./agent")(iotApp);
   
-  require("./" + process.argv[3])(iotApp, $router, $request);
+  require("./" + process.argv[3])(iotApp, $router, $request, console);
 
   require("./agentserver_handlers")(app, iotApp);
 
