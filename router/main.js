@@ -13,13 +13,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
   var fs = require("fs.extra");
   var rimraf = require("rimraf");
-  var spawn = require("child_process").spawn;
-  var execForInstalDeps = require("child_process").exec;
-  var execForStartAgent = require("child_process").exec;
   var portscanner = require("portscanner");
-  var killer = require("tree-kill");
   var request = require("request");
-  //var execForCreateServer = require("child_process").exec;
   var multer = require("multer");
   var ncp = require("ncp").ncp;
   var path = require("path");
@@ -50,22 +45,20 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
       request.get(deviceManagerUrl + 'devices/id/' + deviceId, function(err, res, body){
         console.log("body " + body);
-        //console.log(res.statusCode);
         if(err) {
-            console.log(err.toString());
+          console.log(err.toString());
         } else if(res.statusCode == 200){
-	  var deviceApps = JSON.parse(body).apps;
-	  console.log('deviceApps: ' + deviceApps);
+          var deviceApps = JSON.parse(body).apps;
+          console.log('deviceApps: ' + deviceApps);
 
           var appsProcessed = 0;
 
-	  if(!deviceApps || deviceApps.length == 0){
+          if(!deviceApps || deviceApps.length == 0){
             deviceUp = true;
           } else {
 
             deviceApps.forEach(function(appDescr, index, array){
-  
-              //var appDescr = JSON.parse(JSON.stringify(app));
+
               appDescr.targetStatus = appDescr.status;
               appDescr.status = "initializing";
 
@@ -87,6 +80,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                       }
                       //apps.push(appDescr);
                       appDescr.status = appDescr.targetStatus;
+                      delete appDescr.targetStatus;
                       console.log(JSON.stringify(appDescr));
                       appsProcessed++;
                       if(appsProcessed === array.length){
@@ -95,25 +89,20 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                     });
                   } else {
                     appDescr.status = appStatus;
+                    delete appDescr.targetStatus;
                     dm.updateAppInfo(appDescr, function(err, ress){
                       if(err) {
                         console.log(err.toString());
                       } else {
                         console.log("ADD to dm response: " + ress);
                       }
-                        console.log("444444: " + appStatus);
-                        console.log("33333333333: " + JSON.stringify(appDescr));
-                        appsProcessed++;
-                        if(appsProcessed === array.length){
-                          deviceUp = true;
-                        }
+                      console.log("444444: " + appStatus);
+                      console.log("33333333333: " + JSON.stringify(appDescr));
+                      appsProcessed++;
+                      if(appsProcessed === array.length){
+                        deviceUp = true;
+                      }
                     });
-                    /*console.log("444444: " + appStatus);
-                    console.log("33333333333: " + JSON.stringify(appDescr));
-                    appsProcessed++;
-                    if(appsProcessed === array.length){
-                      deviceUp = true;
-                    }*/
                   }
                 }
               });
@@ -568,36 +557,14 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
         console.log("port: " + port);
         var appDir = "./app/" + aid + "/";
         if (reservedPorts[port] === undefined) {
-          ////var iid = ((new Date()).getTime()) % 1000000;
           reservedPorts[port] = true;
           ports[aid] = port;
 
           console.log("after: " + reservedPorts[port]);
           
-          //appDescr.status = "initializing";
           console.log("instace: " + JSON.stringify(appDescr));
 
-
           console.log("2.port:" + port);
-          /*createAppServerFiles(appDescr, function(err){
-            if(err) {
-              delete reservedPorts[port];
-              delete ports[aid];
-              apps.splice(apps.indexOf(appDescr), 1);
-              rimraf(appDir, function(error){
-                if(error) {
-                  callback(error);
-                } else {
-                  callback(err);
-                }
-              });
-            } else {
-              createAppServer(aid, appDescr, port, function(err, appStatus){
-                callback(null, appStatus);
-              });
-              //callback(null);
-            }
-          });*/
           createAppServer(aid, appDescr, port, function(err, appStatus){
             callback(null, appStatus);
           });
@@ -609,142 +576,82 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       }
     });
   }
-
-/*  function createAppServerFiles(appDescr, callback) {
-
-    var aid = appDescr.id;
-    var appDir = "./app/" + aid + "/";
-
-    ncp(templatesDir, appDir, function(err){
-        if(err){
-            callback(err)
-        } else {
-            callback();
-        }
-    }); 
-  }
-
-*/
-
-  /*process.on("uncaughtException", function(error){
-    //var appErrTemplate = { file: '/home/liquid-iot/Desktop/virtualdevices/vd1/app/main.js',
-                          //methodName: 'module.exports',
-                          //lineNumber: 2,
-                          //column: 25 }
+    
+  process.on("uncaughtException", function(error){
+    console.log("One Error is thrown."); 
     var appErr = errParser.parse(error.stack);
-    //if(appErr[0].methodName == "module.exports"){
     if(appErr[0].file.indexOf('/app/') != -1 && appErr[0].file.indexOf('/main.js') != -1){
       
       var fileName = appErr[0].file;
       var start = fileName.indexOf('/app/') + 5;
       var end = fileName.indexOf('/main.js');
-      var aid = Number(fileName.substring(start, end));
+      var idOfApp = Number(fileName.substring(start, end));
       
-      var appDir = "./app/" + aid + "/";
-      var log_file = fs.createWriteStream(appDir + "debug.log", {flags : "a"});
-      fs.appendFileSync(appDir + "debug.log", error.stack, "utf8");
+      var appDir1 = "./app/" + idOfApp + "/";
+      console.log(idOfApp + ":::" + error.stack);
       
-      console.log(aid);
-      getAppDescr(aid, function(err, appDescr){
+      getAppDescr(idOfApp, function(err, appDescr){
           if(err) {
               console.log(error.toString());
           } else {
 
-            appDescr.status = "crashed";
-            dm.updateAppInfo(appDescr, function(err, response){
-              if(err){
-                console.log(err.toString());
-              } else {
-                console.log("update on dm response: " + response);
-              }
-            });
-            allInstances[aid].server.close();
-            delete reservedPorts[ports[aid]];
+            if(appDescr.status == "initializing"){
+              fs.appendFileSync(appDir1 + "debug.log", error.stack + "\n", "utf8");
+              console.log("aid from initializing: " + idOfApp);
+              appDescr.status = "crashed";
+              allInstances[idOfApp].server.close();
+              delete allInstances[idOfApp];
+              delete reservedPorts[ports[idOfApp]];
+              callbacks[idOfApp](null, "crashed");
+            } else if(appDescr.status == "running") {
+
+              fs.appendFileSync(appDir1 + "debug.log", error.stack + "\n", "utf8");
+              fs.appendFileSync(appDir1 + "debug.log", "stopping the application due to error ...\n", "utf8");
+              
+              startOrStopInstance({status: "paused"}, idOfApp, function(err){
+                if(err){
+                  console.log(err);
+                } else {
+                  console.log("aid from runtime: " + idOfApp);
+                  appDescr.status = "crashed";
+                  dm.updateAppInfo(appDescr, function(err, response){
+                    if(err){
+                      console.log(err.toString());
+                    } else {
+                      console.log("update on dm response: " + response);
+                    }
+                  });
+                  allInstances[idOfApp].server.close();
+                  delete allInstances[idOfApp];
+                  delete reservedPorts[ports[idOfApp]];
+                }
+              });
+            } else if(appDescr.status == "crashed") {
+              fs.appendFileSync(appDir1 + "debug.log", error.stack + "\n", "utf8");
+            }
           }
       });
     } else {
+      console.log("Error not regarding apps is thrown:");
       throw error;
     }
-  });*/
-    
-    process.on("uncaughtException", function(error){
-     console.log("222222"); 
-      var appErr = errParser.parse(error.stack);
-      //if(appErr[0].methodName == "module.exports"){
-      if(appErr[0].file.indexOf('/app/') != -1 && appErr[0].file.indexOf('/main.js') != -1){
-        
-        var fileName = appErr[0].file;
-        var start = fileName.indexOf('/app/') + 5;
-        var end = fileName.indexOf('/main.js');
-        var idOfApp = Number(fileName.substring(start, end));
-        
-        var appDir1 = "./app/" + idOfApp + "/";
-        //var log_file = fs.createWriteStream(appDir1 + "debug.log", {flags : "a"});
-        console.log(idOfApp + ":::" + error.stack);
-        //fs.appendFileSync(appDir1 + "debug.log", error.stack + "\n", "utf8");
-        
-        console.log(idOfApp);
-        getAppDescr(idOfApp, function(err, appDescr){
-            if(err) {
-                console.log(error.toString());
-            } else {
+  });
 
-              if(appDescr.status == "initializing"){
-                fs.appendFileSync(appDir1 + "debug.log", error.stack + "\n", "utf8");
-                console.log("aid from initializing: " + idOfApp);
-                appDescr.status = "crashed";
-                allInstances[idOfApp].server.close();
-                delete allInstances[idOfApp];
-                delete reservedPorts[ports[idOfApp]];
-                callbacks[idOfApp](null, "crashed");
-              } else if(appDescr.status == "running") {
-
-                fs.appendFileSync(appDir1 + "debug.log", error.stack + "\n", "utf8");
-                fs.appendFileSync(appDir1 + "debug.log", "stopping the application due to error ...\n", "utf8");
-                
-                startOrStopInstance({status: "paused"}, idOfApp, function(err){
-                  if(err){
-                    console.log(err);
-                  } else {
-                    console.log("aid from runtime: " + idOfApp);
-                    appDescr.status = "crashed";
-                    dm.updateAppInfo(appDescr, function(err, response){
-                      if(err){
-                        console.log(err.toString());
-                      } else {
-                        console.log("update on dm response: " + response);
-                      }
-                    });
-                    allInstances[idOfApp].server.close();
-                    delete allInstances[idOfApp];
-                    delete reservedPorts[ports[idOfApp]];
-                  }
-                });
-              } else if(appDescr.status == "crashed") {
-                fs.appendFileSync(appDir1 + "debug.log", error.stack + "\n", "utf8");
-              }
-            }
-        });
-      } else {
-        console.log("1111111111111");
-        throw error;
-      }
-    });
-
+  // This array will store callbacks sent to createAppServer function.
+  // The callbacks will be used when error thrown to process.on("uncaughtException")
+  // not at all a good idea. But since all apps are running in one thread error handling is an issue.
+  // TO DO: to come up with a better idea for error handling
   var callbacks = [];
 
   function createAppServer(aid, appDescr, port, callback){
 
     callbacks[aid] = callback;
 
-    console.log('cwd:' + process.cwd());
     var appDirForRequire = "../app/" + aid + "/";
     var appDir = "./app/" + aid + "/";
     var startServerFile = "agentserver_router.js";
 
     console.log("availabe port at: " + port);
-
-    //try {
     
     var ex = require('express');
     var app1 = ex();
@@ -760,205 +667,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       if(appDescr.status == "initializing"){
         appDescr.status = "running";
         console.log("from init to running");
-        //allInstances[aid] = app1;
         callback(null, "running");
       }
     });
-    
-    //appDescr.status = "running";
-    //console.log("from init to running");
-    //allInstances[aid] = app1;
-    //callback(null, "running");
-   
-    /*process.once("uncaughtException", function(error){
-      
-      var appErr = errParser.parse(error.stack);
-      //if(appErr[0].methodName == "module.exports"){
-      if(appErr[0].file.indexOf('/app/') != -1 && appErr[0].file.indexOf('/main.js') != -1){
-        
-        var fileName = appErr[0].file;
-        var start = fileName.indexOf('/app/') + 5;
-        var end = fileName.indexOf('/main.js');
-        var idOfApp = Number(fileName.substring(start, end));
-        
-        var appDir1 = "./app/" + idOfApp + "/";
-        //var log_file = fs.createWriteStream(appDir1 + "debug.log", {flags : "a"});
-        console.log(idOfApp + ":::" + error.stack);
-        fs.appendFileSync(appDir1 + "debug.log", error.stack, "utf8");
-        
-        console.log(idOfApp);
-        getAppDescr(idOfApp, function(err, appDescr){
-            if(err) {
-                console.log(error.toString());
-            } else {
-
-              if(appDescr.status == "initializing"){
-                console.log("aid from initializing: " + idOfApp);
-                appDescr.status = "crashed";
-                allInstances[idOfApp].server.close();
-                delete reservedPorts[ports[idOfApp]];
-                //callback(null, "crashed");
-                callbacks[idOfApp](null, "crashed");
-              } else {
-                console.log("aid from runtime: " + aid);
-                appDescr.status = "crashed";
-                dm.updateAppInfo(appDescr, function(err, response){
-                  if(err){
-                    console.log(err.toString());
-                  } else {
-                    console.log("update on dm response: " + response);
-                  }
-                });
-                allInstances[idOfApp].server.close();
-                delete reservedPorts[ports[idOfApp]];
-              }
-            }
-        });
-      } else {
-        throw error;
-      }
-    });*/
- 
-    //appDescr.status = "initializing";
-    //console.log("from init to running");
-    //allInstances[aid] = app1;
-    //callback(null, "initializing");
-   
-    /* process.on("uncaughtException", function(error){
-      var appErr = errParser.parse(error.stack);
-      if(appErr[0].file.indexOf('/app/') != -1 && appErr[0].file.indexOf('/main.js') != -1){
-          
-        var log_file = fs.createWriteStream(appDir + "debug.log", {flags : "a"});
-          
-        fs.appendFileSync(appDir + "debug.log", error.stack, "utf8");
- 
-        //startOrStopInstance({status: "paused"}, aid, function(err){
-          
-          if(appDescr.status == "initializing"){
-            console.log("aid from initializing: " + aid);
-            appDescr.status = "crashed";
-            app1.server.close();
-            delete reservedPorts[port];
-            callback(null, "crashed");
-          } else {
-            console.log("aid from runtime: " + aid);
-            appDescr.status = "crashed";
-            dm.updateAppInfo(appDescr, function(err, response){
-              if(err){
-                console.log(err.toString());
-              } else {
-                console.log("update on dm response: " + response);
-              }
-            });
-            app1.server.close();
-            delete reservedPorts[port];
-          }
-        //});
-        
-
-/*        var fileName = appErr[0].file;
-        var start = fileName.indexOf('/app/') + 5;
-        var end = fileName.indexOf('/main.js');
-        var idOfApp = Number(fileName.substring(start, end));
-        console.log(idOfApp);
-        getAppDescr(idOfApp, function(err, appDescr){
-            if(err) {
-                console.log(error.toString());
-            } else {
-
-              appDescr.status = "crashed";
-              dm.updateAppInfo(appDescr, function(err, response){
-                if(err){
-                  console.log(err.toString());
-                } else {
-                  console.log("update on dm response: " + response);
-                }
-              });
-              allInstances[idOfApp].server.close();
-              delete reservedPorts[ports[idOfApp]];
-            }
-        });*/
-      /*} else {
-        throw error;
-      }
-    });*/
-     // appDescr.status = "running";
-     // console.log("from init to running");
-     // allInstances[aid] = app1;
-     // callback(null, "running");
-    /*} catch(err){
-      console.log(err);
-      appDescr.status = "crashed";
-      dm.updateAppInfo(appDescr, function(err, response){
-        if(err){
-          console.log(err.toString());
-        } else {
-          console.log("update on dm response: " + response);
-        }
-      });
-      delete reservedPorts[port];
-      //callback(null, "crashed");
-    }*/
-
-    //var spawn = require("child_process").spawn;
-    //var child = spawn("node", [instanceDir + startServerFile, port], {cwd : instanceDir});
-    /*var child = spawn("node", ["./" + startServerFile, port, appDescr.main, deviceManagerUrl], {cwd : appDir});
-    //var execForCreateServer = require("child_process").exec;
-    //var child = execForCreateServer("node " + instanceDir + "agentserver_router.js " + portt.toString(), 
-    //                                         function(err, stdout, stderr){
-    //                                           console.log("baste shod");
-    //                                         });  
-    //allInstances[portt] = child;
-    
-    //var child = execForCreateServer("node " + instanceDir + "agentserver_router.js " + portt.toString());  
-    allInstances[aid] = child;
-
-    child.stdout.on("data", function(data){
-      console.log("stdout: " + data + " : " + typeof(data));
-      var info = String(data);
-      var arrayStr = info.split("\n");
-      var isAppStarted = arrayStr.indexOf("app-started-without-error");
-      //if(isAppStarted != -1){
-          //console.log("yes");
-      //}
-      
-      if(appDescr.status == "initializing" && isAppStarted != -1){
-        appDescr.status = "running";
-        console.log("from init to running");
-        callback(null, "running");
-      } //else {
-        //appDescr.status = "running";
-        //console.log("set to running");
-      //}
-    });
-  
-    child.stderr.on("data", function(data){
-      console.log("stderr: " + data);
-    });
-  
-
-    child.on("exit", function(code, signal){
-        if(code != 0 && code != null){
-          if(appDescr.status == "initializing"){
-            console.log("aid: " + aid);
-            appDescr.status = "crashed";
-            delete reservedPorts[port];
-            callback(null, "crashed");
-          } else {
-            appDescr.status = "crashed";
-            dm.updateAppInfo(appDescr, function(err, response){
-              if(err){
-                console.log(err.toString());
-              } else {
-                console.log("update on dm response: " + response);
-              }
-            });
-            delete reservedPorts[port];
-          }
-        }
-          console.log("exit code: " + code);
-          console.log("signal " + signal);
-    });*/
   }
   
 
@@ -1007,107 +718,27 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
         console.log(err.toString());
         callback(err);
       } else {
-        startOrStopInstance({status: "paused"}, aid, function(err){
-          if(appDescr.status !== "crashed"){
-            allInstances[aid].server.close();
-            delete allInstances[aid];
-            delete reservedPorts[ports[aid]];
-          }
+        if(appDescr.status == "crashed") {
           apps.splice(apps.indexOf(appDescr), 1);
           callback(null);
-        });
+        } else {
+          startOrStopInstance({status: "paused"}, aid, function(err){
+            if(err){
+              callback(err);
+            } else {
+           // if(appDescr.status !== "crashed"){
+              allInstances[aid].server.close();
+              delete allInstances[aid];
+              delete reservedPorts[ports[aid]];
+            //}
+              apps.splice(apps.indexOf(appDescr), 1);
+              callback(null);
+            }
+          });
+        }
       }
     });
   }
-
-/*  function deleteApp(appDescr, callback){
-
-    var aid = appDescr.id;
-    var appDir = "./app/" + aid;
-    
-    rimraf(appDir, function(err){
-      if(err) {
-        console.log(err.toString());
-        callback(err);
-      } else {
-
-        var url = "http://localhost:" + ports[aid] + "/";
-
-        var options = {
-          uri: url,
-          method: 'DELETE'
-        };
-
-        //if(targetState.status === "running" || targetState.status === "paused") {
-            request(options, function(err, ress, body){
-                if(err) {
-                    callback(err);
-                    console.log(err.toString());
-               // } else if(ress.statusCode == 200){
-                    //console.log(body + typeof(body));
-                    //callback(null, body.status);
-                } else if(ress.statusCode == 204) {
-                  console.log("deleted");
-                  delete reservedPorts[ports[aid]];
-                  delete allInstances[aid];
-                  apps.splice(apps.indexOf(appDescr), 1);
-                  callback(null);
-                } else {
-                  console.log("status code error");
-                    callback(new Error("StatusCodeError: " + ress.statusCode));
-                }
-            });
-        //} else {
-            //callback(new Error("The content of request should be running or paused"));
-       // }
-      }
-    });
-  }*/
-
-/*  function deleteApp(appDescr, callback){
-      var aid = appDescr.id;
-      var appDir = "./app/" + aid;
-  
-    rimraf(appDir, function(err){
-      if(err) {
-        callback(err);
-      } else {
-
-
-
-
-
-        console.log("sssssssssssssssssssssssssss");
-          //if(allInstances[iid].pid){
-              //console.log("instance is alive");
-    ////killer(allInstances[aid].pid);
-    allInstances[aid].server.close();
-    delete allInstances[aid].app;
-    delete allInstances[aid].server;
-    delete allInstances[aid];
-    delete reservedPorts[ports[aid]];
-          //} else {
-              //conosle.log("instance is dead");
-          //}
-        //allInstances[iid].kill();
-        //delete reservedPorts[iid];
-        
-    //console.log(JSON.stringify(allInstances[aid]));
-    allInstances[aid] = null;
-    ////console.log(allInstances[aid].toString());
-    ////delete allInstances[aid];
-
-        //getInstancesOfApp(aid, function(err, instances){
-            //if(err){
-                //callback(err);
-            //} else {
-                apps.splice(apps.indexOf(appDescr), 1);
-                callback();
-            //}
-        //});
-      }
-    });
-  }*/
 
   app.get("/app/:aid", function(req, res){
     var aid = parseInt(req.params.aid);
@@ -1139,16 +770,14 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     var url = "http://localhost:" + ports[aid] + "/";
     console.log("url: " + url);
     request.get(url, function(err, res, body){
-        //console.log("body " + body);
-        //console.log(res.statusCode);
-        if(err) {
-            callback(err);
-        } else if(res.statusCode == 200){
-            //console.log(JSON.parse(body).status);
-            callback(null, JSON.parse(body).status);
-        } else {
-            callback(new Error("statusCode error"))
-        }
+      if(err) {
+          callback(err);
+      } else if(res.statusCode == 200){
+          //console.log(JSON.parse(body).status);
+          callback(null, JSON.parse(body).status);
+      } else {
+          callback(new Error("statusCode error"))
+      }
     });
   }
 

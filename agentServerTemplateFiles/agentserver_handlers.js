@@ -1,22 +1,18 @@
-
-//"use strict"
+"use strict"
 
 module.exports = function(exApp, exAppServer, iotApp) {
 
   var fs = require("fs");
 	
-  //var agent = null;
   var status = {status : ""};
   	
   function respond(res, code, body){
-    //res.writeHead(code, {"Content-Type" : "text/plain"});
     res.writeHead(code, {"Content-Type" : "application/json"});
     res.end(body);
   }
 	
   status.status = "running";
   iotApp.start();
-  //console.log("ejra mishe");
 
   exApp.put("/", function(req, res){
     var data = "";
@@ -55,15 +51,6 @@ module.exports = function(exApp, exAppServer, iotApp) {
 
   exApp.get("/", function(req, res) {
     respond(res, 200, JSON.stringify(status));
-  });
-
-  exApp.delete("/", function(req, res){
-    exAppServer.close();
-    //if(iotApp) {
-      iotApp.stop();
-      delete iotApp;
-    //}
-    respond(res, 204);
   });
 
 }
