@@ -228,7 +228,11 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
               } else {
                 console.log("ADD to dm response: " + ress);
               }
-              res.status(200).send(JSON.stringify(appDescr));
+	      if(appStatus == "crashed"){
+                res.status(500).send(JSON.stringify(appDescr));
+	      } else {
+                res.status(200).send(JSON.stringify(appDescr));
+	      }
             });
           }
         });
@@ -565,8 +569,12 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
           console.log("instace: " + JSON.stringify(appDescr));
 
           console.log("2.port:" + port);
-          createAppServer(aid, appDescr, port, function(err, appStatus){
-            callback(null, appStatus);
+          createAppServer(aid, appDescr, port, function(err, appStatus, deploymentErr){
+	    //if(err){
+	      //callback(err, appStatus);
+	    //} else {
+              callback(null, appStatus, deploymentErr);
+	    //}
           });
         } else {
           instanciate(appDescr, callback);
@@ -602,7 +610,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
               allInstances[idOfApp].server.close();
               delete allInstances[idOfApp];
               delete reservedPorts[ports[idOfApp]];
-              callbacks[idOfApp](null, "crashed");
+              callbacks[idOfApp](null, "crashed", err);
             } else if(appDescr.status == "running") {
 
               fs.appendFileSync(appDir1 + "debug.log", error.stack + "\n", "utf8");
