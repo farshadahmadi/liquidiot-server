@@ -18,6 +18,19 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter){
 
   var exAppServer = exApp.listen(port, function(){
 
+    if (require.cache[require.resolve("./agentserver_handlers.js")]){
+      delete require.cache[require.resolve("./agentserver_handlers.js")];
+    }
+    if (require.cache[require.resolve("./agentserver_request.js")]){
+      delete require.cache[require.resolve("./agentserver_request.js")];
+    }
+    if (require.cache[require.resolve("./main.js")]){
+      delete require.cache[require.resolve("./main.js")];
+    }
+    if (require.cache[require.resolve("./agent.js")]){
+      delete require.cache[require.resolve("./agent.js")];
+    }
+
     exApp.server = exAppServer;
     
     var iotApp = {};
@@ -32,7 +45,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter){
     
     exApp.use("/api", $router);
 
-    require("./agentserver_handlers")(exApp, exAppServer, iotApp);
+    require("./agentserver_handlers")(exApp, exAppServer, iotApp, emitter);
 
   });
 

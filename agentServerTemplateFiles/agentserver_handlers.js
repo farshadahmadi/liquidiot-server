@@ -1,6 +1,6 @@
 "use strict"
 
-module.exports = function(exApp, exAppServer, iotApp) {
+module.exports = function(exApp, exAppServer, iotApp, emitter) {
 
   var fs = require("fs");
 	
@@ -42,8 +42,12 @@ module.exports = function(exApp, exAppServer, iotApp) {
   function stop(res) {
     if(iotApp && status.status === "running") {
       status.status = "paused";
+      emitter.once('paused', function(){
+        console.log('pausedeeeeeeeeeeeeeee');
+        respond(res, 200, JSON.stringify(status));
+      });
       iotApp.stop();
-      respond(res, 200, JSON.stringify(status));
+      //respond(res, 200, JSON.stringify(status));
     } else {
       respond(res, 204);
     }
