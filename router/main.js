@@ -36,83 +36,74 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
   var deviceUp = false;
 
-  fs.readFile("./config.txt", "utf8", function(err, data){
-    if(err){
-      console.log(err.toString());
-    } else {
-      var device = JSON.parse(data);
-      var deviceId = device.idFromDM;
-      console.log(deviceId);
+  fs.readFile("./device.txt", "utf8", function(err, devApps){
+    console.log("body " + devApps);
+    var env = {blue: "blue", green: "green"};
+    if(!err){
+      if(devApps == "{}"){
+        deviceUp = true;
+      } else {
+        var deviceApps = JSON.parse(devApps);
+        console.log('deviceApps: ' + deviceApps);
+        var appsProcessed = 0;
 
-      request.get(deviceManagerUrl + 'devices/id/' + deviceId, function(err, res, body){
-        console.log("body " + body);
-        if(err) {
-          console.log(err.toString());
-        } else if(res.statusCode == 200){
-          var deviceApps = JSON.parse(body).apps;
-          console.log('deviceApps: ' + deviceApps);
+        var appIds = Object.keys(deviceApps);
+        appIds.forEach(function(appId, index){
+          var appDescr = deviceApps[appId].blue;
+          if(appDescr.status == "crashed"){
+            apps[appId] = apps[appId] || {};
+            apps[appId][env.blue] = appDescr;
 
-          var appsProcessed = 0;
-
-          if(!deviceApps || deviceApps.length == 0){
-            deviceUp = true;
-          } else {
-
-            deviceApps.forEach(function(appDescr, index, array){
-
-              appDescr.targetStatus = appDescr.status;
-              appDescr.status = "initializing";
-
-              apps[appDescr.id] = appDescr;
-              //apps.push(appDescr);
-              
-              instanciate(appDescr, function(err, appStatus){
-                console.log("555555555555555:" + appStatus);
-                if(err) {
-                  console.log(err.toString());
-                  delete apps[appDescr.id];
-                  //apps.splice(apps.indexOf(appDescr), 1);
-                } else {
-                  if(appStatus === "running" && appDescr.targetStatus === "paused"){
-                    var targetState = { status: appDescr.targetStatus};
-                    startOrStopInstance(targetState, appDescr.id, function(err, appStatus){
-                      if(err){
-                        console.log(err.toString());
-                      } else {
-                        console.log("app went to paused status");
-                      }
-                      //apps.push(appDescr);
-                      appDescr.status = appDescr.targetStatus;
-                      delete appDescr.targetStatus;
-                      console.log(JSON.stringify(appDescr));
-                      appsProcessed++;
-                      if(appsProcessed === array.length){
-                        deviceUp = true;
-                      }
-                    });
-                  } else {
-                    appDescr.status = appStatus;
-                    delete appDescr.targetStatus;
-                    dm.updateAppInfo(appDescr, function(err, ress){
-                      if(err) {
-                        console.log(err.toString());
-                      } else {
-                        console.log("ADD to dm response: " + ress);
-                      }
-                      console.log("444444: " + appStatus);
-                      console.log("33333333333: " + JSON.stringify(appDescr));
-                      appsProcessed++;
-                      if(appsProcessed === array.length){
-                        deviceUp = true;
-                      }
-                    });
-                  }
-                }
-              });
+            allInstances[appId] = allInstances[appId] || {};
+            allInstances[appId][env.blue] = {};
+            appsProcessed++;
+          } else if (appDescr.status == "paused"){
+            appDescr.firstStartAfterCrash = true;
+            //appDescr.firstDeleteAfterCrash = true;
+            
+            apps[appId] = apps[appId] || {};
+            apps[appId][env.blue] = appDescr;
+            
+            allInstances[appId] = allInstances[appId] || {};
+            allInstances[appId][env.blue] = {};
+            appsProcessed++;
+          } else if (appDescr.status == "running"){
+            appDescr.status = "initializing";
+            instanciate(appDescr, env.blue, function(err, appStatus, deploymentErr){
+              if(err) {
+                console.log(err.toString());
+              } else {
+                appDescr.status = appStatus;
+                apps[appId] = apps[appId] || {};
+                apps[appId][env.blue] = appDescr;
+              }
+              appsProcessed++;
             });
           }
-        }
-      });
+          var greenAppDescr = deviceApps[appId].green;
+          if(greenAppDescr){
+            if(greenAppDescr.status == "crashed"){
+              apps[appId] = apps[appId] || {};
+              apps[appId][env.green] = greenAppDescr;
+            } else if (greenAppDescr.status == "paused"){
+              greenAppDescr.firstStartAfterCrash = true;
+              apps[appId] = apps[appId] || {};
+              apps[appId][env.green] = greenAppDescr;
+            }
+          }
+        });
+        var timer = setInterval(function(){
+          if(appsProcessed === appIds.length){
+            deviceUp = true;
+            clearInterval(timer);
+          }
+        });
+      }
+    } else if(err.code == "ENOENT"){
+      console.log(err.toString());
+      deviceUp = true;
+    } else {
+      console.log(err.toString());
     }
   });
 
@@ -240,6 +231,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
               } else {
                 console.log("ADD to dm response: " + ress);
               }
+              fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8");
               if(appStatus == "crashed"){
                 // We can also sent back deployment error (deploymentErr) here.
                 res.status(500).send(JSON.stringify(appDescr));
@@ -528,6 +520,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
               } else {
                 console.log("ADD to dm response: " + ress);
               }
+              fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8");
               if(updatedAppDescr.status == "crashed"){
                 // We can also sent back deployment error (deploymentErr) here.
                 res.status(500).send(JSON.stringify(updatedAppDescr));
@@ -557,7 +550,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
           //res.status(500).send(err.toString());
           callback(err);
         } else {
-          console.log("result of stop status: " + blueAppStatus);
+          /*console.log("result of stop status: " + blueAppStatus);
           blueAppDescr.status = blueAppStatus;
           console.log("bbbbbbbbbbbbbbbbbbb:" + JSON.stringify(blueAppDescr));
           var greenAppDescr = appDescr.green;
@@ -573,26 +566,49 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                 callback(null, greenAppDescr);
               }
             });
-          } else {
-            startOrStopInstance({status: "running"}, aid, env.green, function(err, greenAppStatus){
-              if(err){
-                //res.status(500).send(err.toString());
-                callback(err);
-              } else {
-                greenAppDescr.status = greenAppStatus;
-                greenAppDescr.canRollback = false;
+          } else {*/
+            var greenAppDescr = appDescr.green;
+            if(greenAppDescr.firstStartAfterCrash){
+              delete greenAppDescr.firstStartAfterCrash;
+              greenAppDescr.status = "initializing";
+              instanciate(greenAppDescr, env.green, function(err, greenAppStatus, deploymentErr){
+                if(err) {
+                  console.log(err.toString());
+                } else {
+                  greenAppDescr.status = greenAppStatus;
+                  greenAppDescr.canRollback = false;
 
-                exchangeBlueGreen(aid, blueAppStatus, function(err){
-                  if(err){
-                    //res.status(500).send(err.toString());
-                    callback(err);
-                  } else {
-                    callback(null, greenAppDescr);
-                  }
-                });
-              }
-            });
-          }
+                  exchangeBlueGreen(aid, blueAppStatus, function(err){
+                    if(err){
+                      //res.status(500).send(err.toString());
+                      callback(err);
+                    } else {
+                      callback(null, greenAppDescr);
+                    }
+                  });
+                }
+              });
+            } else {
+              startOrStopInstance({status: "running"}, aid, env.green, function(err, greenAppStatus){
+                if(err){
+                  //res.status(500).send(err.toString());
+                  callback(err);
+                } else {
+                  greenAppDescr.status = greenAppStatus;
+                  greenAppDescr.canRollback = false;
+
+                  exchangeBlueGreen(aid, blueAppStatus, function(err){
+                    if(err){
+                      //res.status(500).send(err.toString());
+                      callback(err);
+                    } else {
+                      callback(null, greenAppDescr);
+                    }
+                  });
+                }
+              });
+            }
+         // }
         }
       });
     }
@@ -621,6 +637,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
               } else {
                 console.log("ADD to dm response: " + ress);
               }
+              fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8");
               if(updatedAppDescr.status == "crashed"){
                 // We can also sent back deployment error (deploymentErr) here.
                 res.status(500).send(JSON.stringify(updatedAppDescr));
@@ -932,7 +949,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             //}
           });
         } else {
-          instanciate(appDescr, callback);
+          instanciate(appDescr, env, callback);
         }
       } else {
         callback(err);
@@ -996,6 +1013,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                       console.log("update on dm response: " + response);
                     }
                   });
+                  fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8");
                   allInstances[idOfApp][env].server.close();
                   //delete allInstances[idOfApp][env];
                   delete reservedPorts[ports[idOfApp][env]];
@@ -1082,6 +1100,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
               } else {
                 console.log("RAMOVE from dm response: " + response);
               }
+              fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8");
               res.status(200).send("App is deleted.");
             });
           }
@@ -1137,8 +1156,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     var greenAppDescr = appDescr.green;
     var blueAppDescr = appDescr.blue;
 
-    if(environment != "blue" && environment != "green"){
-      callback(new Error('Environment shoumd be either blue or green'));
+    if(environment != env.blue && environment != env.green){
+      callback(new Error('Environment should be either blue or green'));
     } else if(environment == "green"){
       console.log("first");
       if(greenAppDescr){
@@ -1156,6 +1175,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       }
     } else {
 
+      console.log("First step");
       deleteAppEnv(blueAppDescr, env.blue,  function(err){
         if(err) {
           //res.status(500).send(err.toString());
@@ -1173,6 +1193,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             });
           } else {
             console.log("Blue is deleted");
+            console.log("Fourth Step");
             delete apps[aid];
             callback(null);
           }
@@ -1192,12 +1213,17 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
         console.log(err.toString());
         callback(err);
       } else {
-        if(env == "green"){
-          delete require.cache[require.resolve("../app/" + aid + "/green/agentserver_router.js")];
-        } else {
-          delete require.cache[require.resolve("../app/" + aid + "/blue/agentserver_router.js")];
+        try {
+          if(env == "green"){
+            delete require.cache[require.resolve("../app/" + aid + "/green/agentserver_router.js")];
+          } else {
+            delete require.cache[require.resolve("../app/" + aid + "/blue/agentserver_router.js")];
+          }
+        } catch(e){
+          console.log(e.toString());
         }
-        if(appDescr.status == "crashed") {
+
+        if(appDescr.status == "crashed" || appDescr.firstStartAfterCrash) {
           delete allInstances[aid][env];
           delete apps[aid][env];
           /*if(env == "blue"){
@@ -1206,10 +1232,12 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
           //apps.splice(apps.indexOf(appDescr), 1);
           callback(null);
         } else {
+          console.log("Second Step");
           startOrStopInstance({status: "paused"}, aid, env, function(err){
             if(err){
               callback(err);
             } else {
+              console.log("Third Step");
            // if(appDescr.status !== "crashed"){
               allInstances[aid][env].server.close();
               delete allInstances[aid][env];
@@ -1310,6 +1338,31 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
           var blueAppDescr = appDescr.blue;
             if(blueAppDescr.status == "crashed" || blueAppDescr.status == "initializing"){
                 res.status(500).send(JSON.stringify(blueAppDescr))
+            } else if(blueAppDescr.firstStartAfterCrash) {
+              delete blueAppDescr.firstStartAfterCrash;
+              //delete blueAppDescr.firstDeleteAfterCrash;
+              blueAppDescr.status = "initializing";
+              instanciate(blueAppDescr, env, function(err, blueAppStatus, deploymentErr){
+                if(err) {
+                  res.status(500).send(err.toString());
+                } else {
+                  blueAppDescr.status = blueAppStatus;
+
+                  dm.updateAppInfo(blueAppDescr, function(err, response){
+                    if(err){
+                      console.log("update erro: " + err.toString());
+                    } else {
+                      console.log("update on dm response: " + response);
+                    }
+                    fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8");
+                    if(blueAppDescr.status == "crashed"){
+                      res.status(500).send(JSON.stringify(blueAppDescr))
+                    } else {
+                      res.status(200).send(JSON.stringify(blueAppDescr));
+                    }
+                  });
+                }
+              });
             } else {
               var data = "";
 
@@ -1332,6 +1385,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                       } else {
                         console.log("update on dm response: " + response);
                       }
+                      fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8");
                       res.status(200).send(JSON.stringify(blueAppDescr));
                     });
                   }
@@ -1344,13 +1398,6 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
   function startOrStopInstance(targetState, aid, env, callback){
 
-        var url = "http://localhost:" + ports[aid][env] + "/";
-
-        var options = {
-          uri: url,
-          method: 'PUT',
-          json: targetState
-        };
 
         /*if(targetState.status == "paused"){
           allInstances[aid][env].$emitter.once('paused', function(){
@@ -1362,6 +1409,14 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
         if (targetState.status == "paused" && apps[aid][env].status == "crashed") {
           callback(null, "crashed");
         } else { 
+          var url = "http://localhost:" + ports[aid][env] + "/";
+
+          var options = {
+            uri: url,
+            method: 'PUT',
+            json: targetState
+          };
+
           if(targetState.status === "running" || targetState.status === "paused") {
             request(options, function(err, ress, body){
                 if(err) {

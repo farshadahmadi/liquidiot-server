@@ -18,17 +18,21 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter){
 
   var exAppServer = exApp.listen(port, function(){
 
-    if (require.cache[require.resolve("./agentserver_handlers.js")]){
-      delete require.cache[require.resolve("./agentserver_handlers.js")];
-    }
-    if (require.cache[require.resolve("./agentserver_request.js")]){
-      delete require.cache[require.resolve("./agentserver_request.js")];
-    }
-    if (require.cache[require.resolve("./main.js")]){
-      delete require.cache[require.resolve("./main.js")];
-    }
-    if (require.cache[require.resolve("./agent.js")]){
-      delete require.cache[require.resolve("./agent.js")];
+    try {
+      if (require.cache[require.resolve("./agentserver_handlers.js")]){
+        delete require.cache[require.resolve("./agentserver_handlers.js")];
+      }
+      if (require.cache[require.resolve("./agentserver_request.js")]){
+        delete require.cache[require.resolve("./agentserver_request.js")];
+      }
+      if (require.cache[require.resolve("./main.js")]){
+        delete require.cache[require.resolve("./main.js")];
+      }
+      if (require.cache[require.resolve("./agent.js")]){
+        delete require.cache[require.resolve("./agent.js")];
+      }
+    }catch(error){
+      console.log(error);
     }
 
     exApp.server = exAppServer;
