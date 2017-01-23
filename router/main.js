@@ -108,6 +108,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   });
 
   app.use(function(req, res, next){
+    console.log('origin');
+    console.log(req.get('host'));
     var flag = false;
     //if(req.headers.origin === "http://koodain.herokuapp.com"){
     if(req.headers.origin){
@@ -204,6 +206,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   // in tarball in .tgz format.
   app.post("/app", upload.single("filekey"), function(req, res) {
     console.log("deploy is called");
+    console.log(JSON.stringify(req.body));
     // creating the specific id for application
     //var aid = ((new Date()).getTime()) % 1000000;
     var environment = "blue";
@@ -240,21 +243,25 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             if(err) {
               res.status(500).send(err.toString());
             } else {
-              appDescr.status = appStatus;
-              dm.updateAppInfo(appDescr, function(err, ress){
-                if(err) {
-                  console.log(err.toString());
-                } else {
-                  console.log("ADD to dm response: " + ress);
-                }
-                fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8");
-                if(appStatus == "crashed"){
-                  // We can also sent back deployment error (deploymentErr) here.
-                  res.status(500).send(JSON.stringify(appDescr));
-                } else {
-                  res.status(200).send(JSON.stringify(appDescr));
-                }
-              });
+	      if(appStatus == "installed"){
+                res.status(500).send(JSON.stringify(appDescr));
+	      } else {
+                appDescr.status = appStatus;
+                dm.updateAppInfo(appDescr, function(err, ress){
+                  if(err) {
+                    console.log(err.toString());
+                  } else {
+                    console.log("ADD to dm response: " + ress);
+                  }
+                  fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8");
+                  if(appStatus == "crashed"){
+                    // We can also sent back deployment error (deploymentErr) here.
+                    res.status(500).send(JSON.stringify(appDescr));
+                  } else {
+                    res.status(200).send(JSON.stringify(appDescr));
+                  }
+                });
+              }
             }
           });
               //res.status(200).send(JSON.stringify(appDescr)); // uncoment this
@@ -1464,7 +1471,14 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
   function startOrStopInstance(targetState, aid, env, callback){
 
-        if (targetState.status == "paused" && apps[aid][env].status == "crashed") {
+	console.log(apps[aid][env].status);
+
+	// This is used when application is installed but can not start running, For example,
+	// developer forgot to write "tastComplete" function in the "task" utility function of the app.
+	if(targetState.status == "paused" && apps[aid][env].status == "installed"){
+	  callbacks[aid](null, "installed", null);
+	  callback(null, "paused");
+	} else if (targetState.status == "paused" && apps[aid][env].status == "crashed") {
           callback(null, "crashed");
         } else if (targetState.status == "paused" && apps[aid][env].status == "paused") {
           callback(null, "paused");
