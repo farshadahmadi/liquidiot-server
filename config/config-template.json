@@ -1,0 +1,73 @@
+This configuration template is for a device that measures temperature:
+
+{
+  "device": {
+    "name":"TemperatureDevice",
+    "manufacturer":"RPi",
+    "libraries":{"ds18x20":"0.2.0"},
+    "location":{
+      "latitude":61.45009891,
+      "longitude":23.8561061,
+      "streetAddress":"korkeakoulunkatu 1",
+      "postalCode":33720,
+      "addressLocality":"Tampere",
+      "addressRegion":"Pirkanmaa",
+      "addressCountry":"Finland",
+      "tag":"TE114",
+      "x":400,
+      "y":400
+    },
+    "url":"http://130.230.140.157:8082",
+    "port":8082,
+    "startportrange":8001,
+    "endportrange":9000,
+    "connectedDevices":{
+      "tempSensor":{"model":"ds18b20"}
+    },
+    "idFromBackend":"",
+    "idFromDM":""
+  },
+  "deviceManager": {
+    "url":"http://192.168.1.10:3000/"
+  },
+  "backend": {
+    "url":"https://<username>:<passworld>@my.iot-ticket.com/api/v1/devices"
+  }
+}
+
+This configuration template is for a device that plays sound:
+
+{
+  "device": {
+    "name":"SoundDevice",
+    "manufacturer":"RPi",
+    "libraries":{"lame":"1.2.3","speaker":"0.2.6"},
+    "location":{
+      "latitude":61.45009891,
+      "longitude":23.8561061,
+      "streetAddress":"korkeakoulunkatu 1",
+      "postalCode":33720,
+      "addressLocality":"tampere",
+      "addressRegion":"Pirkanmaa",
+      "addressCountry":"Finland",
+      "tag":"TE114",
+      "x":400,
+      "y":400
+    },
+  "url":"http://130.230.140.157:8081",
+  "port":8082,
+  "startportrange":8001,
+  "endportrange":9000,
+  "connectedDevices":{
+    "speaker":{"model":"typhoon"}
+  },
+  "idFromBackend":"",
+  "idFromDM":""
+  },
+  "deviceManager": {
+    "url":"http://192.168.1.10:3000/"
+  },
+  "backend": {
+    "url":"https://<username>:<passworld>@my.iot-ticket.com/api/v1/devices"
+  }
+}

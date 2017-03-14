@@ -1,0 +1,38 @@
+{
+    "device": {
+        "name": "TemperatureDevice",
+        "manufacturer": "RPi",
+        "libraries": {
+            "ds18x20": "0.2.0"
+        },
+        "location": {
+            "latitude": 61.45009891,
+            "longitude": 23.8561061,
+            "streetAddress": "korkeakoulunkatu 1",
+            "postalCode": 33720,
+            "addressLocality": "Tampere",
+            "addressRegion": "Pirkanmaa",
+            "addressCountry": "Finland",
+            "tag": "TE114",
+            "x": 400,
+            "y": 400
+        },
+        "url": "http://sth.com",
+        "port": 8080,
+        "startportrange": 8001,
+        "endportrange": 9000,
+        "connectedDevices": {
+            "tempSensor": {
+                "model": "ds18b20"
+            }
+        },
+        "idFromBackend": "1",
+        "idFromDM": "58c7a9149420fabd0751f88e"
+    },
+    "deviceManager": {
+        "url": "http://130.230.142.101:3001/"
+    },
+    "backend": {
+        "url": "https://<username>:<passworld>@my.iot-ticket.com/api/v1/devices"
+    }
+}

@@ -6,91 +6,61 @@
  * Farshad Ahmadi Ghohandizi <farsad.ahmadi.gh@gmail.com>
  */
 
+/*if (!process.env.NODE_ENV) {
+  console.log("\n*****************************************");
+  console.log("No NODE_ENV environment variable defined!");
+  console.log("Please define it. Exiting now...");
+  console.log("*****************************************\n");
+  process.exit(1);
+}*/
 
+var path = require("path");
 var fs = require("fs.extra");
 var request = require("request");
 var express = require("express");
 var app = express();
 
-/*<<<<<<< HEAD
-var deviceManagerUrl = "http://192.168.1.10:3000/";
-var backendUrl = "https://farshadahmadi:4liquidIoTProject@my.iot-ticket.com/api/v1/devices"
+//var configFile = path.resolve("./config", process.env.NODE_ENV);
+var configFile = path.resolve("./config/config.json");
 
-=======
->>>>>>> dev*/
-
-getDeviceInfo(function(err, deviceInfo){
-    if(err){
-        console.log(err.toString());
-    } else {
-        //console.log(deviceInfo);
-        getDeviceManagerInfo(function(err, deviceManagerInfo){
+getConfig(function(err, config){
+  if(err){
+      console.log(err.toString());
+  } else {
+    console.log(config);
+    console.log(process.env.DEVICE_URL);
+    config.device.url = process.env.DEVICE_URL;
+    console.log(config);
+		registerToDeviceManager(config, function(err){
+      if(err){
+          console.log(err.toString());
+      } else {
+        registerToBackend(config, function(err){
             if(err){
                 console.log(err.toString());
             } else {
-                //console.log(deviceManagerInfo);
-
-		registerToDeviceManager(deviceInfo, deviceManagerInfo, function(err){
-	            if(err){
-	                console.log(err.toString());
-	            } else {
-                        
-                        getBackendInfo(function(err, backendInfo){
-                            if(err){
-                                console.log(err.toString());
-                            } else {
-                                //console.log(backendInfo);
-	                        registerToBackend(deviceInfo, backendInfo, function(err){
-	                            if(err){
-	                                console.log(err.toString());
-	                            } else {
-        	                        start(deviceInfo, deviceManagerInfo);
-	                            }
-	                        });
-                            }
-                        });
-	            }
-        	});
+                start(config);
             }
         });
+      }
+    });
+
     }
 });
 
-function getDeviceInfo(callback){
-    fs.readFile("./config.txt", "utf8", function(err, deviceData){
+function getConfig(callback){
+    fs.readFile(configFile, "utf8", function(err, configData){
         if(err){
             callback(err);
         } else {
-            var deviceInfo = JSON.parse(deviceData);
-            callback(null, deviceInfo)
+            var config = JSON.parse(configData);
+            callback(null, config)
         }
     });
 }
 
-function getDeviceManagerInfo(callback){
-    fs.readFile("./dm-config.txt", "utf8", function(err, deviceManagerData){
-        if(err){
-            callback(err);
-        } else {
-            var deviceManagerInfo = JSON.parse(deviceManagerData);
-            callback(null, deviceManagerInfo);
-        }
-    });
-}
-
-function getBackendInfo(callback){
-    fs.readFile("./backend-config.txt", "utf8", function(err, backendData){
-        if(err){
-            callback(err);
-        } else {
-            var backendInfo = JSON.parse(backendData);
-            callback(null, backendInfo);
-        }
-    });
-}
-
-function registerToDeviceManager(deviceInfo, deviceManagerInfo, callback){
-        if(deviceInfo.idFromDM){
+function registerToDeviceManager(config, callback){
+        if(config.device.idFromDM){
             // If the device info has an id, it means that it has been already added to device manager server.
             // The device info should be checked on the server, may be, there is a need to update the info.
             console.log("already registered to DM");
@@ -100,16 +70,20 @@ function registerToDeviceManager(deviceInfo, deviceManagerInfo, callback){
             // Then the id will be added to the device info file.
             
             var options = {
-                uri: deviceManagerInfo.url,
+                uri: config.deviceManager.url,
                 method: 'POST',
-                json: deviceInfo
+                json: config.device
             };
 
+            console.log("before registration");
+
             request(options, function(err, res, body){
+              console.log("after registration");
                 if(!err && res.statusCode == 200) {
                     //console.log(body);
-                    deviceInfo.idFromDM = body.toString();
-                    fs.writeFile("./config.txt", JSON.stringify(deviceInfo), function(err){
+                    config.device.idFromDM = body.toString();
+                    console.log(config);
+                    fs.writeFile(configFile, JSON.stringify(config, null, 4), function(err){
                         if(err){
                             console.log(err.toString());
                             callback(err);
@@ -126,8 +100,8 @@ function registerToDeviceManager(deviceInfo, deviceManagerInfo, callback){
         }
 }
 
-function registerToBackend(deviceInfo, backendInfo, callback){
-        if(deviceInfo.idFromBackend){
+function registerToBackend(config, callback){
+        if(config.device.idFromBackend){
             // If the device info has an id, it means that it has been already added to device manager server.
             // The device info should be checked on the server, may be, there is a need to update the info.
             console.log("already registered to Backend");
@@ -135,8 +109,8 @@ function registerToBackend(deviceInfo, backendInfo, callback){
         } else {
             // The device info should be added to the device manager server. Server will create an ID.
             // Then the id will be added to the device info file.
-            var reqContent = {"name":deviceInfo.name,"manufacturer":deviceInfo.manufacturer};
-            var backendUrl = backendInfo.url;
+            var reqContent = {"name":config.device.name,"manufacturer":config.device.manufacturer};
+            var backendUrl = config.backend.url;
 
             var options = {
                 uri: backendUrl,
@@ -150,8 +124,8 @@ function registerToBackend(deviceInfo, backendInfo, callback){
                     console.log("body: " + body);
                     console.log(typeof(body));
                   
-                    deviceInfo.idFromBackend = body.deviceId;
-                    fs.writeFile("./config.txt", JSON.stringify(deviceInfo), function(err){
+                    config.device.idFromBackend = body.deviceId;
+                    fs.writeFile(configFile, JSON.stringify(config, null, 4), function(err){
                         if(err){
                             console.log(err.toString());
                             callback(err);
@@ -161,21 +135,18 @@ function registerToBackend(deviceInfo, backendInfo, callback){
                         }
                     });
                 } else {
-                    console.log(err.toString());
+                    //console.log(err.toString());
                     callback(err);
                 }
             });
         }
 }
 
-function start(deviceInfo, deviceManagerInfo){
-  require("./router/main")(app, deviceManagerInfo.url, deviceInfo);
-  console.log(deviceManagerInfo.url);
-  var server = app.listen(deviceInfo.port, function(){
+function start(config, deviceInfo, deviceManagerInfo){
+  require("./router/main")(app, config.deviceManager.url, config.device);
+  console.log(config.deviceManager.url);
+  var server = app.listen(config.device.port, function(){
     console.log("server started");  
   });
 }
-
-
-
 
