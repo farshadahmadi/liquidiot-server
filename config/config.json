@@ -17,7 +17,7 @@
             "x": 400,
             "y": 400
         },
-        "url": "http://sth.com",
+        "url": null,
         "port": 8080,
         "startportrange": 8001,
         "endportrange": 9000,
@@ -27,7 +27,7 @@
             }
         },
         "idFromBackend": "1",
-        "idFromDM": "58c7a9149420fabd0751f88e"
+        "idFromDM": null
     },
     "deviceManager": {
         "url": "http://130.230.142.101:3001/"
