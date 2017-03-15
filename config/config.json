@@ -30,7 +30,7 @@
         "idFromDM": null
     },
     "deviceManager": {
-        "url": "http://130.230.142.101:3001/"
+        "url": "http://172.30.192.186:8080/"
     },
     "backend": {
         "url": "https://<username>:<passworld>@my.iot-ticket.com/api/v1/devices"
