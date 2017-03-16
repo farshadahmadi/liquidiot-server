@@ -31,6 +31,8 @@ getConfig(function(err, config){
     console.log(process.env.DEVICE_URL);
     config.device.url = process.env.DEVICE_URL;
     config.device.name = process.env.DEVICE_NAME;
+    config.device.location.x = process.env.DEVICE_LOCATION_X;
+    config.device.location.y = process.env.DEVICE_LOCATION_Y;
     console.log(config);
 		registerToDeviceManager(config, function(err){
       if(err){
