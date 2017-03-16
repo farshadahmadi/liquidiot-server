@@ -30,6 +30,7 @@ getConfig(function(err, config){
     console.log(config);
     console.log(process.env.DEVICE_URL);
     config.device.url = process.env.DEVICE_URL;
+    config.device.name = process.env.DEVICE_NAME;
     console.log(config);
 		registerToDeviceManager(config, function(err){
       if(err){
