@@ -23,10 +23,10 @@ var app = express();
 //var configFile = path.resolve("./config", process.env.NODE_ENV);
 var configFile = path.resolve("./config/config.json");
 
-process.env.DEVICE_URL = "http://localhost:8087";
-process.env.DEVICE_NAME = "localtest";
-process.env.DEVICE_LOCATION_X = 0;
-process.env.DEVICE_LOCATION_Y = 0;
+process.env.DEVICE_URL = "http://130.230.142.100:8080";
+process.env.DEVICE_NAME = "uniserver";
+process.env.DEVICE_LOCATION_X = 400;
+process.env.DEVICE_LOCATION_Y = 400;
 
 getConfig(function(err, config){
   if(err){

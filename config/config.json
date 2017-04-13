@@ -1,6 +1,6 @@
 {
     "device": {
-        "name": "localtest",
+        "name": "uniserver",
         "manufacturer": "RPi",
         "libraries": {
             "ds18x20": "0.2.0"
@@ -14,12 +14,12 @@
             "addressRegion": "Pirkanmaa",
             "addressCountry": "Finland",
             "tag": "TE114",
-            "x": "0",
-            "y": "0"
+            "x": "400",
+            "y": "400"
         },
-        "url": "http://localhost:8087",
-        "port": 8087,
-        "startportrange": 8088,
+        "url": "http://130.230.142.100:8080",
+        "port": 8080,
+        "startportrange": 8082,
         "endportrange": 9000,
         "connectedDevices": {
             "tempSensor": {
@@ -27,7 +27,7 @@
             }
         },
         "idFromBackend": "1",
-        "idFromDM": "58ee30b2121a3f0030e6e17a"
+        "idFromDM": "58ef3e19121a3f0030e6e17b"
     },
     "deviceManager": {
         "url": "http://resource-registry-node-mongo2.paas.msv-project.com/"
