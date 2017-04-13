@@ -1,10 +1,12 @@
 
 "use stricts"
 
-module.exports  = function(deviceManagerUrl){
+module.exports  = function(deviceManagerUrl, appId){
 
-  var request = require("request-promise");
+  var requestP = require("request-promise");
   var slick = require("slick");
+  var $request = require("request-promise");
+  const token = "ZmFyc2hhZGFobWFkaWdob2hhbmRpemk6RmFyc2hhZEA3MSE=";
 
   function CustomError(msg, reason){
     this.message = msg;
@@ -22,7 +24,7 @@ module.exports  = function(deviceManagerUrl){
     options.url = url;
     options.timeout = options.timeout || 5000;
     
-    return request(options)
+    return requestP(options)
           .then(function(response){
             return response;
           })
@@ -38,7 +40,37 @@ module.exports  = function(deviceManagerUrl){
           });
   }
 
-  var $request = function(options) {
+  $request.toImpact = function(options){
+    
+    var dispatcher = {
+      url: "http://dispatcher-node-mongo2.paas.msv-project.com/register",
+      method: "POST",
+      json: true
+    };
+
+    const impactUrl = "http://api.iot.nokia.com:9090/m2m";
+    options.url = impactUrl + (options.path || "/");
+    options.headers = {
+      accept: "application/json",
+      Authorization: "Basic " + token
+    };
+
+    return requestP(options)
+      .then(function(resOfImpact){
+        var obj = JSON.parse(resOfImpact);
+        dispatcher.body = {
+          requestId: obj.requestId,
+          url: process.env.DEVICE_URL + "/app/" + appId + "/api"
+        }
+        console.log(dispatcher);
+        return requestP(dispatcher)
+          .then(function(resOfDispatcher){
+            return obj;
+          });
+      });
+  }
+
+  $request.toApp = function(options) {
     
     if(typeof options == 'object' && options.hasOwnProperty("app")){
       
@@ -51,7 +83,7 @@ module.exports  = function(deviceManagerUrl){
         }
       };
 
-      return request(opt).
+      return requestP(opt).
         then(function(res){
 
           checkAppQuery(options.app);
@@ -92,8 +124,6 @@ module.exports  = function(deviceManagerUrl){
               return res;
             });
         });
-    } else {
-      return request(options);
     }
   }
 

@@ -1,6 +1,6 @@
 {
     "device": {
-        "name": "TemperatureDevice",
+        "name": "localtest",
         "manufacturer": "RPi",
         "libraries": {
             "ds18x20": "0.2.0"
@@ -14,12 +14,12 @@
             "addressRegion": "Pirkanmaa",
             "addressCountry": "Finland",
             "tag": "TE114",
-            "x": 400,
-            "y": 400
+            "x": "0",
+            "y": "0"
         },
-        "url": null,
-        "port": 8080,
-        "startportrange": 8001,
+        "url": "http://localhost:8087",
+        "port": 8087,
+        "startportrange": 8088,
         "endportrange": 9000,
         "connectedDevices": {
             "tempSensor": {
@@ -27,10 +27,10 @@
             }
         },
         "idFromBackend": "1",
-        "idFromDM": null
+        "idFromDM": "58ee30b2121a3f0030e6e17a"
     },
     "deviceManager": {
-        "url": "http://172.30.192.186:8080/"
+        "url": "http://resource-registry-node-mongo2.paas.msv-project.com/"
     },
     "backend": {
         "url": "https://<username>:<passworld>@my.iot-ticket.com/api/v1/devices"
