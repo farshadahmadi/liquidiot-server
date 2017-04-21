@@ -4,6 +4,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter){
 
   var fs = require("fs");
   var util = require("util");
+  var bodyParser = require("body-parser");
 
   var express = require('express');
 
@@ -40,6 +41,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter){
     var iotApp = {};
 
     var $router = express.Router();
+    $router.use(bodyParser.json());
 
     var $request = require("./agentserver_request")(RRUrl, appDescr.id);
 
