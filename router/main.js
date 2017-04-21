@@ -140,7 +140,25 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
   });
 
+  //var bodyParser = require('body-parser');
+  //app.use(bodyParser.json());
+
   app.use("/app/:aid/api", function(req, res){
+
+    //console.log("bodyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy");
+    //console.log(req.body)
+
+    //var data = "";
+    
+    //req.on("data", function(chunk){
+      //data += chunk;
+    //});
+
+    //req.on("end", function(){
+
+    //var d =  JSON.parse(data);
+    //console.log("bodyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy");
+    //console.log(d);
 
     var aid = parseInt(req.params.aid);
     var env = "blue";
@@ -169,6 +187,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             }
         }
     });
+
+    //});
+
   });
 
 ///////////////////////////////////////////////////////////////////
