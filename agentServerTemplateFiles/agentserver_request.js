@@ -63,6 +63,10 @@ module.exports  = function(deviceManagerUrl, appId){
           url: process.env.DEVICE_URL + "/app/" + appId + "/api"
         }
         console.log(dispatcher);
+
+	var waitTill = new Date(new Date().getTime() + 5 * 1000);
+	while(waitTill > new Date()){};
+
         return requestP(dispatcher)
           .then(function(resOfDispatcher){
             return obj;
