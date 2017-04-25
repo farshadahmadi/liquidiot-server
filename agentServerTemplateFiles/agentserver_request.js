@@ -58,19 +58,23 @@ module.exports  = function(deviceManagerUrl, appId){
     return requestP(options)
       .then(function(resOfImpact){
         var obj = JSON.parse(resOfImpact);
-        dispatcher.body = {
-          requestId: obj.requestId,
-          url: process.env.DEVICE_URL + "/app/" + appId + "/api"
+        if(resOfImpact.requestId){
+          dispatcher.body = {
+            requestId: obj.requestId,
+            url: process.env.DEVICE_URL + "/app/" + appId + "/api"
+          }
+          console.log(dispatcher);
+
+	  var waitTill = new Date(new Date().getTime() + 5 * 1000);
+	  while(waitTill > new Date()){};
+
+          return requestP(dispatcher)
+            .then(function(resOfDispatcher){
+              return obj;
+            });
+        } else {
+          return obj;
         }
-        console.log(dispatcher);
-
-	var waitTill = new Date(new Date().getTime() + 5 * 1000);
-	while(waitTill > new Date()){};
-
-        return requestP(dispatcher)
-          .then(function(resOfDispatcher){
-            return obj;
-          });
       });
   }
 
