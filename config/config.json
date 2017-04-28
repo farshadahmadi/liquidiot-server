@@ -14,10 +14,10 @@
             "addressRegion": "Pirkanmaa",
             "addressCountry": "Finland",
             "tag": "TE114",
-            "x": "0",
-            "y": "0"
+            "x": null,
+            "y": null
         },
-        "url": "http://localhost:8087",
+        "url": null,
         "port": 8087,
         "startportrange": 8088,
         "endportrange": 9000,
@@ -27,7 +27,7 @@
             }
         },
         "idFromBackend": "1",
-        "idFromDM": "58ee30b2121a3f0030e6e17a"
+        "idFromDM": null
     },
     "deviceManager": {
         "url": "http://resource-registry-node-mongo2.paas.msv-project.com/"
