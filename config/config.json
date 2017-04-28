@@ -18,8 +18,8 @@
             "y": null
         },
         "url": null,
-        "port": 8087,
-        "startportrange": 8088,
+        "port": 8080,
+        "startportrange": 8082,
         "endportrange": 9000,
         "connectedDevices": {
             "tempSensor": {
