@@ -58,9 +58,9 @@ module.exports  = function(deviceManagerUrl, appId){
     return requestP(options)
       .then(function(resOfImpact){
         var obj = JSON.parse(resOfImpact);
-        if(obj.requestId){
+        if(obj.requestId || obj.subscriptionId){
           dispatcher.body = {
-            requestId: obj.requestId,
+            id: obj.requestId || obj.subscriptionId,
             url: process.env.DEVICE_URL + "/app/" + appId + "/api"
           }
           console.log(dispatcher);
