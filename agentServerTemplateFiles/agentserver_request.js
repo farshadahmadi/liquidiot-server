@@ -58,6 +58,7 @@ module.exports  = function(deviceManagerUrl, appId){
     return requestP(options)
       .then(function(resOfImpact){
         var obj = JSON.parse(resOfImpact);
+        console.log(resOfImpact);
         if(obj.requestId || obj.subscriptionId){
           dispatcher.body = {
             id: obj.requestId || obj.subscriptionId,
