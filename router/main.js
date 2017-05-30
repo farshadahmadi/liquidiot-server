@@ -24,6 +24,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   var upload = multer({dest:'./uploads/'});
   var dm = require("./dm")(deviceManagerUrl, deviceInfo);
   var errParser = require('stacktrace-parser');
+  var fsExtra = require('fs-extra');
 
   var reservedPorts = [];
   var allInstances = [];
@@ -222,37 +223,22 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     spawn("sudo", ["shutdown", "now"]);
   });
 
-
   // This method is called for deployment of application. The application should be packed
   // in tarball in .tgz format.
   app.post("/app", upload.single("filekey"), function(req, res) {
     console.log("deploy is called");
     console.log(JSON.stringify(req.body));
     // creating the specific id for application
-    //var aid = ((new Date()).getTime()) % 1000000;
     var environment = "blue";
     var aid = Math.floor(Math.random() * 1000000);
-    installApp(req, aid, environment, function(err, appDescr){
-      if(err) {
-        res.status(500).send(err.toString());
-      } else {
+    installApp_P(req, aid, environment)
+      .then(function(appDescr){
         appDescr.id = aid;
         appDescr.status = "installed";
         appDescr.canRollback = false;
-        //appDescr.environment = environment;
-        //apps.push(appDescr);
         apps[aid] = {};
         apps[aid][environment] = appDescr;
 
-            /*dm.addAppInfo(appDescr, function(err, ress){
-              if(err) {
-                console.log(err.toString());
-              } else {
-                console.log("ADD to dm response: " + ress);
-              }
-              fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8");
-              res.status(200).send(JSON.stringify(appDescr));
-            });*/
         dm.addAppInfo(appDescr, function(err, ress){ //
           if(err) { //
             console.log(err.toString()); //
@@ -264,9 +250,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             if(err) {
               res.status(500).send(err.toString());
             } else {
-	      if(appStatus == "installed"){
+              if(appStatus == "installed"){
                 res.status(500).send(JSON.stringify(appDescr));
-	      } else {
+              } else {
                 appDescr.status = appStatus;
                 dm.updateAppInfo(appDescr, function(err, ress){
                   if(err) {
@@ -285,255 +271,166 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
               }
             }
           });
-              //res.status(200).send(JSON.stringify(appDescr)); // uncoment this
-        }); //
-      }
-    });
+        });
+      })
+      .catch(function(err){
+        console.log(err.toString());
+        res.status(500).send(err.toString());
+      });
   });
 
+  function installApp_P(req, aid, environment) {
 
-  function installApp(req, aid, environment, callback) {
+    function onCopyFilesToAppDir(appDescription){
+      return createAppServerFiles_P(aid, environment)
+                .then(function(res){
+                  console.log(res);
+                  return appDescription;
+                });
+    }
 
-    createAppDir(aid, environment, function(err){
-      if(err) {
-        callback(err);
-      } else {
-        uploadApp(req, aid, environment, function(err){
-          if(err){
-            callback(err);
-          } else {
-            extractTarFile(aid, environment, function(err){
-              if(err){
-                callback(err);
-              } else {
-                extractAppDescription(aid, environment, function(err, appDescription){
-                    if(err){
-                        callback(err);
-                    } else {
-                        copyFilesToAppDir(aid, environment, function(err){
-                          if(err){
-                            callback(err);
-                          } else {
-                            createAppServerFiles(aid, environment, function(err){
-                              if(err) {
-                                callback(err);
-                              } else {
-                                callback(null, appDescription);
-                              }
-                            });
-                          }
-                        });
-                     }
-                 });
-              }
-            });
-          }
-        });
-      }
-    });
+    function onGetAppDescr(appDescription){
+      return copyFilesToAppDir_P(aid, environment)
+                .then(function(res){
+                  console.log(res);
+                  return onCopyFilesToAppDir(appDescription);
+                });
+    }
+    
+    return createAppDir_P(aid, environment)
+      .then(function(res){
+        console.log(res);
+        return uploadApp_P(req, aid, environment);
+      })
+      .then(function(res){
+        console.log(res);
+        return extractTarFile_P(aid, environment);
+      })
+      .then(function(res){
+        console.log(res);
+        return extractAppDescription_P(aid, environment);
+      })
+      .then(onGetAppDescr);
   }
 
-  function createAppDir(aid, environment, callback) {
+  function createAppDir_P(aid, environment) {
     var blueGreenAppDir = "./app/" + aid + "/";
     var appDir = "./app/" + aid + "/" + environment + "/";
-    var appFile = aid + ".js";
 
-    fs.mkdir("./app", function(err){
-      if(!err || (err && err.code === "EEXIST")) {
-        fs.mkdir(blueGreenAppDir, function(err){
-          if(!err || (err && err.code === "EEXIST")){
-            fs.mkdir(appDir, function(err){
-              if(!err || (err && err.code === "EEXIST")){
-                callback();
-              } else {
-                callback(err);
-              }
-            });
-          } else {
-            callback(err);
-          }
-        });
-      } else if (err) {
-        callback(err);
-      }
-    });
+    return fsExtra.ensureDir(appDir);
+
   }
-
-  function uploadApp(req, aid, environment, callback) {
+  
+  function uploadApp_P(req, aid, environment) {
 
     if(req.file) {
       var tmpPath = req.file.path;
       var targetPath = "./app/" + aid + "/" + environment + "/" + aid + ".tgz";
-      fs.rename(tmpPath, targetPath, function(err){
-        if(err) {
-          callback(err)
-        } else {
-          callback();
-        }
-      });
-      
+      return fsExtra.rename(tmpPath, targetPath);
     } else {
-      callback(new Error("File is empty"));
+      throw new Error("File is empty");
+    }
+  }
+  
+  function extractTarFile_P(aid, environment) {
+    return new Promise(function(resolve, reject){
+      var tarFile = "./app/" + aid + "/" + environment + "/" + aid + ".tgz";
+      var target = "./app/" + aid + "/" + environment;
+
+      fs.createReadStream(tarFile)
+                   .on("error", function(err){ reject(err); })
+                   .pipe(zlib.Gunzip())
+                   .pipe(tar.Extract({ path : target }))
+                   .on("end", function(){ resolve(); });
+    });
+  }
+
+  function onReadLiquidIoT (appDescr, src){
+    var liquidiotJson = JSON.parse(src);
+    console.log("liquidiotJson: " + src);
+    if(liquidiotJson.applicationInterfaces) {
+      appDescr.applicationInterfaces = liquidiotJson.applicationInterfaces;
+      return appDescr;
+    } else {
+      throw new Error("Package.json format is incorrect. No Main entry.");
     }
   }
 
-  function extractTarFile(aid, environment, callback) {
-    var tarFile = "./app/" + aid + "/" + environment + "/" + aid + ".tgz";
-    var target = "./app/" + aid + "/" + environment;
-
-    fs.createReadStream(tarFile)
-                 .on("error", function(err){ callback(err); })
-                 .pipe(zlib.Gunzip())
-                 .pipe(tar.Extract({ path : target }))
-                 .on("end", function(){ callback(); });
+  function onReadPackage(dir, src){
+    var appDescr = JSON.parse(src);
+    if(appDescr.main){
+      return fsExtra.readFile(dir + "/liquidiot.json", "utf8")
+        .then(function(lsrc){
+          return onReadLiquidIoT(appDescr, lsrc);
+          //console.log('s1: ' + JSON.stringify(s));
+          //return s;
+        });
+    } else {
+      throw new Error("Package.json format is incorrect. No Main entry.");
+    }
   }
 
-  function extractAppDescription(aid, environment, callback) {
+  function onGetExtractedTarFile(dir){
+    console.log('dir: ' + dir);
+    return fsExtra.readFile(dir + "/package.json", "utf8")
+              .then(function(src){
+                return onReadPackage(dir, src);
+                //console.log('s2: ' + JSON.stringify(s));
+                //return s;
+              });
+  }
+
+  function extractAppDescription_P(aid, environment) {
     var appDir = "./app/" + aid + "/" + environment + "/";
-    fs.readdir(appDir, function(err, files){
-      if(err){
-            callback(err);
-      } else {
-        files.map(function(file){
+    
+    return fsExtra.readdir(appDir)
+      .then(function(files){
+        return files.map(function(file){
           return path.join(appDir, file);
         }).filter(function(file){
           return (fs.statSync(file).isDirectory());
-        }).forEach(function(file){
-          fs.readFile(file + "/package.json", "utf8", function(err, src){
-            if(err) {
-                callback(err);
-            } else {
-              try{
-                var appDescr = JSON.parse(src);
-                if(appDescr.main) {
-                    fs.stat(file + "/" + appDescr.main, function(err, stat){
-                        if(err){
-                            callback(err);
-                        } else {
-                            fs.readFile(file + "/liquidiot.json", "utf8", function(err, src){
-                                if(err){
-                                  callback(err);
-                                } else {
-                                  try{
-                                    var liquidiotJson = JSON.parse(src);
-                                    console.log("liquidiotJson: " + liquidiotJson);
-                                    if(liquidiotJson.applicationInterfaces) {
-                                      appDescr.applicationInterfaces = liquidiotJson.applicationInterfaces;
-                                      callback(null, appDescr);
-                                    } else {
-                                      callback(new Error("Package.json format is incorrect. No Main entry."));
-                                    }
-                                  } catch(error){
-                                    callback(error);
-                                  }
-                                }
-                            });
-                            //callback(null, appDescr);
-                        }
-                    });
-
-                } else {
-                    callback(new Error("Package.json format is incorrect. No Main entry."));
-                }
-              } catch(e){
-                callback(e);
-              }
-            }
-          });
-        });
-      }
-    });
+        })[0];
+      })
+      .then(onGetExtractedTarFile)
+      .then(function(res){
+        console.log('res: ' + JSON.stringify(res));
+        return res;
+      });
   }
 
-  function copyFilesToAppDir(aid, environment, callback){
+  function copyFilesToAppDir_P(aid, environment){
     var appDir = "./app/" + aid + "/" + environment + "/";
     var appTarFile = aid + ".tgz";
+
+    console.log('appDir: ' + appDir);
     
-    fs.readdir(appDir, function(err, files){
-      if(err){
-            callback(err);
-      } else {
-        files.map(function(file){
-          return path.join(appDir, file);
-        }).filter(function(file){
-          return (fs.statSync(file).isDirectory() && file !== "instance");
-        }).forEach(function(file){
-          ncp(file, appDir, function(err){
-            if(err){
-              callback(err);
-            } else {
-              rimraf(file, function(err){
-                if(err){
-                  callback(err);
-                } else {
-                  rimraf(appDir + appTarFile, function(err){
-                    if(err){
-                      callback(err);
-                    } else {
-                      callback(null);
-                    }
-                  });
-                }
-              });
-            }
+    return fsExtra.remove(appDir + appTarFile)
+      .then(function(){
+        return fsExtra.readdir(appDir);
+      }).then(function(files){
+        //console.log('extractedTarfile :' + path.join( appDir,files[0]));
+        return path.join(appDir,files[0]);
+      }).then(function(extractedTarFile){
+        console.log('extractedTarfile: ' + extractedTarFile);
+        return fsExtra.copy(extractedTarFile, appDir)
+          .then(function(){
+            return fsExtra.remove(extractedTarFile);
           });
-        });
-      }
-    });
+      });
   }
 
-  function createAppServerFiles(appId, environment, callback) {
+  function createAppServerFiles_P(appId, environment) {
 
     var aid = appId;
     var appDir = "./app/" + aid + "/" + environment + "/";
-
-    ncp(templatesDir, appDir, function(err){
-        if(err){
-            callback(err)
-        } else {
-            callback();
-        }
-    }); 
+    
+    return fsExtra.copy(templatesDir,appDir);
   }
 
   app.get("/app", function(req, res) {
     var resString = JSON.stringify(apps);
     res.status(200).send(resString);
   });
-
-  // To Do list: apps data struncture is changing from array to object. 
-/*  app.delete("/app", function(req, res) {
-    deleteApps(function(err){
-      if(err){
-        res.status(500).send(err.toString());
-      } else {
-        res.status(200).send("all apps deleted.");
-      }
-    });
-  });
-
-  function deleteApps(callback) {
-    console.log("deletapps is called");
-    if(apps.length == 0) {
-      callback();
-    } else {
-      for(var i in apps) {
-        //console.log(apps[i].id);
-        deleteApp(apps[i], function(err){
-          if(err) {
-           callback(err);
-          } else {
-            console.log("length: " + apps.length);
-            if(apps.length == 0) {
-              console.log("length: " + apps.length);
-              callback();
-            }
-          }
-        });
-      }
-    }
-  }
-*/
 
 ///////////////////////////////////////////////////////////////////
 ////////////// app Related Functions - END ////////////////////////
@@ -987,6 +884,15 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     }
   }
   
+  function getAppDescrP(aid){
+    return new Promise(function(resolve, reject){
+      if(apps[aid]){
+        resolve(apps[aid]);
+      } else {
+        reject(new GetAppDescrError("App with id " + aid + " not found.", errCodes.appNotExist));
+      }
+    });
+  }
 /*  function getAppDescr(aid, env, callback){
 
     if(env != "blue" && env != "green"){

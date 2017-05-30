@@ -28,7 +28,8 @@ This configuration template is for a device that measures temperature:
     "idFromDM":""
   },
   "deviceManager": {
-    "url":"http://192.168.1.10:3000/"
+    "url":"http://resource-registry-node-mongo2.paas.msv-project.com/"
+"
   },
   "backend": {
     "url":"https://<username>:<passworld>@my.iot-ticket.com/api/v1/devices"
