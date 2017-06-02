@@ -41,9 +41,15 @@ module.exports = function(exApp, exAppServer, iotApp, emitter) {
 
   function stop(res) {
     if(iotApp && status.status === "running") {
+
+      var time = setTimeout(function(){
+        respond(res, 500, "app did not specify when terminate function should end");
+      }, 10000);
+
       status.status = "paused";
       emitter.once('paused', function(){
         console.log('pausedeeeeeeeeeeeeeee');
+        clearTimeout(time);
         respond(res, 200, JSON.stringify(status));
       });
       iotApp.stop();

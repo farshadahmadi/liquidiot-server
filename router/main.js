@@ -672,11 +672,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
               blueAppDescr.status = blueAppStatus;
               console.log("bbbbbbbbbbbbbbbbbbb:" + JSON.stringify(blueAppDescr));
               
-              installApp(req, aid, env.green, function(err, greenAppDescr){
-                if(err) {
-                  //res.status(500).send(err.toString());
-                  callback(err);
-                } else {
+              installApp_P(req, aid, env.green).then(function(greenAppDescr){
                   greenAppDescr.id = aid;
                   greenAppDescr.status = "installed";
                   apps[aid][env.green] = greenAppDescr;
@@ -718,7 +714,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                       }
                     }); 
                   });
-                }
+              }).catch(function(err){
+                callback(err);
               });
             }
           });
@@ -1056,6 +1053,14 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     //app1.$emitter = emitter;
 
     require(appDirForRequire + startServerFile)(app1, port, appDescr, deviceManagerUrl, appDir, emitter);
+    
+    var time = setTimeout(function(){
+      fs.appendFileSync(appDir + "debug.log", 'app did not specify when either initialize or task function should end' + "\n", "utf8");
+      appDescr.status = "crashed";
+      allInstances[aid][env].server.close();
+      delete reservedPorts[ports[aid][env]];
+      callback(null, "crashed", new Error('app did not specify when either initialize or task function should end'));
+    }, 10000);
 
     //allInstances[aid] = app1;
     allInstances[aid] = allInstances[aid] || {};
@@ -1063,6 +1068,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     
     emitter.on('started', function(){
       if(appDescr.status == "installed"){
+        clearTimeout(time);
         appDescr.status = "running";
         console.log("from init to running");
         callback(null, "running");
@@ -1330,6 +1336,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   app.put("/app/:aid", function(req, res){
     var aid = parseInt(req.params.aid);
     var env = "blue";
+    var appDir = "./app/" + aid + "/";
 
     getAppDescr(aid, function(err, appDescr){
         if(err){
@@ -1373,11 +1380,18 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
               req.on("end", function(){
                 var targetState = JSON.parse(data);
                 startOrStopInstance(targetState, aid, env, function(err, appStatus){
+                  var code = null;
                   if(err){
                     console.log("error from stop: " + err.toString());
-                    res.status(500).send(err.toString());
+                    fs.appendFileSync(appDir + "debug.log", 'app did not specify when terminate function should end' + "\n", "utf8");
+                    blueAppDescr.status = "crashed";
+                    allInstances[aid][env].server.close();
+                    delete reservedPorts[ports[aid][env]];
+                    code = 500;
                   } else {
+                    code = 200;
                     blueAppDescr.status = appStatus;
+                  }
                     //var appIndex = appIndexOf(aid, "id");
                     dm.updateAppInfo(blueAppDescr, function(err, response){
                       if(err){
@@ -1386,9 +1400,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                         console.log("update on dm response: " + response);
                       }
                       fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8");
-                      res.status(200).send(JSON.stringify(blueAppDescr));
+                      res.status(code).send(JSON.stringify(blueAppDescr));
                     });
-                  }
+                  
                 });
               });
            }
