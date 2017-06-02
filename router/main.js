@@ -1054,26 +1054,29 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
     require(appDirForRequire + startServerFile)(app1, port, appDescr, deviceManagerUrl, appDir, emitter);
     
-    var time = setTimeout(function(){
+    /*var time = setTimeout(function(){
       fs.appendFileSync(appDir + "debug.log", 'app did not specify when either initialize or task function should end' + "\n", "utf8");
       appDescr.status = "crashed";
       allInstances[aid][env].server.close();
       delete reservedPorts[ports[aid][env]];
       callback(null, "crashed", new Error('app did not specify when either initialize or task function should end'));
-    }, 10000);
+    }, 10000);*/
 
     //allInstances[aid] = app1;
     allInstances[aid] = allInstances[aid] || {};
     allInstances[aid][env] = app1;
     
-    emitter.on('started', function(){
+    appDescr.status = "running";
+    console.log("from init to running");
+    callback(null, "running");
+    /*emitter.on('started', function(){
       if(appDescr.status == "installed"){
         clearTimeout(time);
         appDescr.status = "running";
         console.log("from init to running");
         callback(null, "running");
       }
-    });
+    });*/
   }
   
 
