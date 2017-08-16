@@ -50,14 +50,23 @@ module.exports  = function(deviceManagerUrl, appId){
 
     const impactUrl = "http://api.iot.nokia.com:9090/m2m";
     options.url = impactUrl + (options.path || "/");
+    //if(options.method == "POST" || options.method == "PUT"){
+      options.json = true;
+    //}
     options.headers = {
       accept: "application/json",
       Authorization: "Basic " + token
     };
 
+    console.log("before request to impact");
     return requestP(options)
       .then(function(resOfImpact){
-        var obj = JSON.parse(resOfImpact);
+	console.log("after request to impact");
+	console.log(resOfImpact);
+        //if(typeof )
+        //var obj = JSON.parse(resOfImpact);
+	var obj = resOfImpact;
+        console.log("after parsing the impact request");
         console.log(resOfImpact);
         if(obj.requestId || obj.subscriptionId){
           dispatcher.body = {
@@ -66,8 +75,8 @@ module.exports  = function(deviceManagerUrl, appId){
           }
           console.log(dispatcher);
 
-	  var waitTill = new Date(new Date().getTime() + 5 * 1000);
-	  while(waitTill > new Date()){};
+	  //var waitTill = new Date(new Date().getTime() + 5 * 1000);
+	  //while(waitTill > new Date()){};
 
           return requestP(dispatcher)
             .then(function(resOfDispatcher){
