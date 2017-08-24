@@ -27,10 +27,10 @@
             }
         },
         "idFromBackend": "1",
-        "idFromDM": "58ef3e19121a3f0030e6e17b"
+        "idFromDM": ""
     },
     "deviceManager": {
-        "url": "http://resource-registry-node-mongo2.paas.msv-project.com/"
+        "url": "http://130.230.142.101:3001/"
     },
     "backend": {
         "url": "https://<username>:<passworld>@my.iot-ticket.com/api/v1/devices"
