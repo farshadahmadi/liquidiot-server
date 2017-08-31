@@ -22,11 +22,13 @@ var app = express();
 
 //var configFile = path.resolve("./config", process.env.NODE_ENV);
 var configFile = path.resolve("./config/config.json");
+var configTemplateFile = path.resolve("./config/config-template.json");
 
-process.env.DEVICE_URL = "http://130.230.142.100:8080";
-process.env.DEVICE_NAME = "uniserver";
-process.env.DEVICE_LOCATION_X = 400;
-process.env.DEVICE_LOCATION_Y = 400;
+process.env.DEVICE_URL =  process.env.DEVICE_URL || "http://130.230.142.100:8080";
+process.env.DEVICE_NAME = process.env.DEVICE_NAME || "uniserver";
+process.env.DEVICE_LOCATION_X = process.env.DEVICE_LOCATION_X || 400;
+process.env.DEVICE_LOCATION_Y = process.env.DEVICE_LOCATION_Y || 400;
+process.env.RR_URL = process.env.RR_URL || "http://130.230.142.101:3001/";
 
 getConfig(function(err, config){
   if(err){
@@ -38,6 +40,8 @@ getConfig(function(err, config){
     config.device.name = process.env.DEVICE_NAME;
     config.device.location.x = process.env.DEVICE_LOCATION_X;
     config.device.location.y = process.env.DEVICE_LOCATION_Y;
+    config.deviceManager.url = process.env.RR_URL;
+    
     console.log(config);
 		registerToDeviceManager(config, function(err){
       if(err){
@@ -58,7 +62,16 @@ getConfig(function(err, config){
 
 function getConfig(callback){
     fs.readFile(configFile, "utf8", function(err, configData){
-        if(err){
+
+        // if not exist, create config file based on config-template
+        if(err && err.code == "ENOENT"){
+            fs.writeFileSync(configFile, fs.readFileSync(configTemplateFile,'utf8'), 'utf8');
+            //fs.createReadStream(configTemplateFile).pipe(fs.createWriteStream(configFile));
+            configData = fs.readFileSync(configFile, 'utf8');
+            console.log(configData);
+        }
+
+        if(err && err.code !== "ENOENT"){
             callback(err);
         } else {
             var config = JSON.parse(configData);

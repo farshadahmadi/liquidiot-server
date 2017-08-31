@@ -15,3 +15,4 @@ demo.log
 start.sh
 stop.sh
 device.txt
+config.json
