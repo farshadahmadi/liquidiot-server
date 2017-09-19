@@ -1,6 +1,6 @@
 {
     "device": {
-        "name": "uniserver",
+        "name": "",
         "manufacturer": "RPi",
         "libraries": {
             "ds18x20": "0.2.0"
@@ -14,10 +14,10 @@
             "addressRegion": "Pirkanmaa",
             "addressCountry": "Finland",
             "tag": "TE114",
-            "x": "400",
-            "y": "400"
+            "x": "",
+            "y": ""
         },
-        "url": "http://130.230.142.100:8080",
+        "url": "",
         "port": 8080,
         "startportrange": 8082,
         "endportrange": 9000,
@@ -30,7 +30,7 @@
         "idFromDM": ""
     },
     "deviceManager": {
-        "url": "http://130.230.142.101:3001/"
+        "url": ""
     },
     "backend": {
         "url": "https://<username>:<passworld>@my.iot-ticket.com/api/v1/devices"

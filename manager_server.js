@@ -36,11 +36,11 @@ getConfig(function(err, config){
   } else {
     console.log(config);
     console.log(process.env.DEVICE_URL);
-    config.device.url = process.env.DEVICE_URL;
-    config.device.name = process.env.DEVICE_NAME;
-    config.device.location.x = process.env.DEVICE_LOCATION_X;
-    config.device.location.y = process.env.DEVICE_LOCATION_Y;
-    config.deviceManager.url = process.env.RR_URL;
+    config.device.url = config.device.url || process.env.DEVICE_URL;
+    config.device.name = config.device.name || process.env.DEVICE_NAME;
+    config.device.location.x = config.device.location.x || process.env.DEVICE_LOCATION_X;
+    config.device.location.y = config.device.location.y || process.env.DEVICE_LOCATION_Y;
+    config.deviceManager.url = config.deviceManager.url || process.env.RR_URL;
     
     console.log(config);
 		registerToDeviceManager(config, function(err){
