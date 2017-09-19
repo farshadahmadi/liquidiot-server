@@ -29,7 +29,6 @@ This configuration template is for a device that measures temperature:
   },
   "deviceManager": {
     "url":"http://resource-registry-node-mongo2.paas.msv-project.com/"
-"
   },
   "backend": {
     "url":"https://<username>:<passworld>@my.iot-ticket.com/api/v1/devices"
