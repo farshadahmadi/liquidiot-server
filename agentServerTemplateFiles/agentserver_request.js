@@ -23,15 +23,7 @@ module.exports  = function(deviceManagerUrl, appId){
 
     options.url = url;
     options.timeout = options.timeout || 5000;
-
-    //console.log(JSON.stringify(options));   
-      
-    options.json = true;
     
-    options.headers = {
-      accept: "application/json"
-    };
- 
     return requestP(options)
           .then(function(response){
             return {appId: app.id, response: response};
@@ -98,33 +90,22 @@ module.exports  = function(deviceManagerUrl, appId){
 
   $request.toApp = function(options) {
     
-    if(typeof options == 'object' && options.hasOwnProperty("applicationInterface")){
-      var query =  'LET devs = (FOR device IN devices\n' +
-                     'FOR app in device.apps[*]\n' +
-                       'FILTER \"' + options.applicationInterface + '\" IN app.applicationInterfaces\n' +
-                       'RETURN DISTINCT device)\n' +
-            'FOR dev in devs\n' +
-               'LET apps = (FOR app in dev.apps[*]\n' +
-                    'FILTER \"' + options.applicationInterface  + '\" IN app.applicationInterfaces\n' +
-                    'RETURN app)\n' +
-               'RETURN MERGE_RECURSIVE(UNSET(dev,"apps"), {apps: apps})';
-
+    if(typeof options == 'object' && options.hasOwnProperty("app")){
+      
       var opt = {
         url: deviceManagerUrl, // url of the Resource Registry (AKA device manager)
         qs: {
-          device: query//, 
-          //device: options.device, 
-          //operation:'and'
+          app: options.app, 
+          device: options.device, 
+          operation:'and'
         }
       };
 
       return requestP(opt).
         then(function(res){
 
-          //checkAppQuery(options.app);
-
-          console.log(JSON.parse(res));
-         
+          checkAppQuery(options.app);
+          
           var devices = JSON.parse(res);
           if(!devices || devices.length == 0){
             throw new Error("No app was found with " + options.applicationInterface + " as options.applicationInterface value.");
@@ -133,10 +114,8 @@ module.exports  = function(deviceManagerUrl, appId){
           var reqPromises = [];
 
           for(var i = 0; i < devices.length; i++){
-            //console.log(JSON.stringify(devices[i]));
-            for(var j = 0; j < devices[i].apps.length; j++){
-              //console.log(JSON.stringify(devices[i].apps[j]));
-              reqPromises.push(reqPromise(devices[i].url, devices[i].apps[j], options));
+            for(var j = 0; j < devices[i].matchedApps.length; j++){
+              reqPromises.push(reqPromise(devices[i].url, devices[i].matchedApps[j], options));
             }
           }
 
