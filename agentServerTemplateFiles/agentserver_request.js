@@ -34,14 +34,14 @@ module.exports  = function(deviceManagerUrl, appId){
  
     return requestP(options)
           .then(function(response){
-            return response;
+            return {appId: app.id, response: response};
           })
           .catch(function(err){
 
             if(!options.successCriteria || options.successCriteria === "all" ){
-              throw err;
-            } else if (options.successCriteria === "some") {
-              return err;
+              throw {appId: app.id, error: err.message || err.toString()};
+            } else if (options.successCriteria === "any") {
+              return new Error(JSON.stringify({appId: app.id, error: err.message || err.toString()}));
             } else {
               throw new Error( options.successCriteria + " is not a valid value for options.mode");
             }
@@ -127,7 +127,7 @@ module.exports  = function(deviceManagerUrl, appId){
          
           var devices = JSON.parse(res);
           if(!devices || devices.length == 0){
-            throw new Error("No app was found with " + options.app + " as options.app value.");
+            throw new Error("No app was found with " + options.applicationInterface + " as options.applicationInterface value.");
           }
           
           var reqPromises = [];
@@ -144,8 +144,8 @@ module.exports  = function(deviceManagerUrl, appId){
             .then(function(response){
 
               var res = {
-                successes: [],
-                failures: []
+                failures: [],
+                successes: []
               };
 
               response.forEach(function(value){
