@@ -21,6 +21,13 @@ module.exports  = function(deviceManagerUrl, appId){
       url += options.path;
     }
 
+    options.json = true;
+     
+    options.headers = {
+      accept: "application/json"
+    };
+
+
     options.url = url;
     options.timeout = options.timeout || 5000;
     
@@ -108,7 +115,7 @@ module.exports  = function(deviceManagerUrl, appId){
           
           var devices = JSON.parse(res);
           if(!devices || devices.length == 0){
-            throw new Error("No app was found with " + options.applicationInterface + " as options.applicationInterface value.");
+            throw new Error("No app was found with " + options.app + " as options.applicationInterface value.");
           }
           
           var reqPromises = [];
