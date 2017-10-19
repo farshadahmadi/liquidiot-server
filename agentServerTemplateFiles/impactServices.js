@@ -8,8 +8,8 @@ module.exports  = function(deviceManagerUrl, appId){
   var urlJoin = require('url-join');
   var queryString = require('querystring');
   
-  const token = "ZmFyc2hhZGFobWFkaWdob2hhbmRpemk6RmFyc2hhZEA3MSE=";
-  //const token = "QWhtYWRpZ2hvaGFuZGl6aTpOb2tpYUA5MSE=" 
+  //const token = "ZmFyc2hhZGFobWFkaWdob2hhbmRpemk6RmFyc2hhZEA3MSE=";
+  const token = "QWhtYWRpZ2hvaGFuZGl6aTpOb2tpYUA5MSE=" 
 
   function CustomError(msg, reason){
     this.message = msg;
