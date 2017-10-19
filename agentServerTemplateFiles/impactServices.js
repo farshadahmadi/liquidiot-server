@@ -1,7 +1,7 @@
 
 "use stricts"
 
-module.exports  = function(deviceManagerUrl, appId){
+module.exports  = function(deviceManagerUrl, appId, deviceInfo){
 
   var requestP = require("request-promise");
 

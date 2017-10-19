@@ -1052,7 +1052,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     var emitter = new EventEmitter();
     //app1.$emitter = emitter;
 
-    require(appDirForRequire + startServerFile)(app1, port, appDescr, deviceManagerUrl, appDir, emitter);
+    require(appDirForRequire + startServerFile)(app1, port, appDescr, deviceManagerUrl, appDir, emitter, deviceInfo);
     
     var time = setTimeout(function(){
       fs.appendFileSync(appDir + "debug.log", 'app did not specify when either initialize or task function should end' + "\n", "utf8");

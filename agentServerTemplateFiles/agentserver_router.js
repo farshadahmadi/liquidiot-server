@@ -1,6 +1,6 @@
 'use strict'
 
-module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter){
+module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo){
 
   var fs = require("fs");
   var util = require("util");
@@ -46,9 +46,9 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter){
     var $router = express.Router();
     $router.use(bodyParser.json());
 
-    var $request = require("./agentserver_request")(RRUrl, appDescr.id);
+    var $request = require("./agentserver_request")(RRUrl, appDescr.id, deviceInfo);
     
-    var $impactServices = require("./impactServices")(RRUrl, appDescr.id);
+    var $impactServices = require("./impactServices")(RRUrl, appDescr.id, deviceInfo);
 
     require("./agent")(iotApp, emitter);
     

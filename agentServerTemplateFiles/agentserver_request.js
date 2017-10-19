@@ -1,7 +1,7 @@
 
 "use stricts"
 
-module.exports  = function(deviceManagerUrl, appId){
+module.exports  = function(deviceManagerUrl, appId, deviceInfo){
 
   var requestP = require("request-promise");
   var slick = require("slick");
@@ -79,7 +79,7 @@ module.exports  = function(deviceManagerUrl, appId){
         if(obj.requestId || obj.subscriptionId){
           dispatcher.body = {
             id: obj.requestId || obj.subscriptionId,
-            url: process.env.DEVICE_URL + "/app/" + appId + "/api"
+            url: deviceInfo.url + "/app/" + appId + "/api"
           }
           console.log(dispatcher);
 
