@@ -32,6 +32,9 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter){
       if (require.cache[require.resolve("./agent.js")]){
         delete require.cache[require.resolve("./agent.js")];
       }
+      if (require.cache[require.resolve("./impactServices.js")]){
+        delete require.cache[require.resolve("./impactServices.js")];
+      }
     }catch(error){
       console.log(error);
     }
@@ -44,10 +47,12 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter){
     $router.use(bodyParser.json());
 
     var $request = require("./agentserver_request")(RRUrl, appDescr.id);
+    
+    var $impactServices = require("./impactServices")(RRUrl, appDescr.id);
 
     require("./agent")(iotApp, emitter);
     
-    require("./" + appDescr.main)(iotApp, $router, $request, logger);
+    require("./" + appDescr.main)(iotApp, $router, $request, logger, $impactServices.listEndpoints);
     
     exApp.use("/api", $router);
 
