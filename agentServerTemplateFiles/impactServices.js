@@ -73,7 +73,7 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo){
       return options;
     })
     .then(function(options){
-      return requestP(options)
+      return requestP(options);
     })
     .then(function(resOfImpact){
       console.log(resOfImpact);
