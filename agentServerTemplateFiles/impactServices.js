@@ -48,14 +48,15 @@ module.exports  = function(deviceManagerUrl, appId){
 
   impactServices.getEndpointDetails = function(pathObject){
 
+    var dispatcher = {
+       //url: "http://dispatcher-node-mongo2.paas.msv-project.com/register",
+      url: "http://130.230.142.100:8090/register",
+      method: "POST",
+      json: true
+    };
+    
     return Promise.resolve().then(function(){
 
-      var dispatcher = {
-        //url: "http://dispatcher-node-mongo2.paas.msv-project.com/register",
-        url: "http://130.230.142.100:8090/register",
-        method: "POST",
-        json: true
-      };
 
       var serialNumber = pathObject.serialNumber;
       var path = '/m2m/endpoints';
