@@ -18,8 +18,8 @@ module.exports  = function(deviceManagerUrl, appId){
   CustomError.prototype = new Error();
   
   var impactServices = {};
-  const impactHost = "http://api.iot.nokia.com:9090/";
-  //const impactHost = "http://api.impact.nokia-innovation:9090/";
+  //const impactHost = "http://api.iot.nokia.com:9090/";
+  const impactHost = "http://api.impact.nokia-innovation.io:9090/";
 
   //impactServices.listEndpoints = function(groupName, startOffset, endOffset){
   impactServices.listEndpoints = function(queryObject){
@@ -44,6 +44,55 @@ module.exports  = function(deviceManagerUrl, appId){
     }
 
     return requestP(options);
+  }
+
+  impactServices.getEndpointDetails = function(pathObject){
+
+    return Promise.resolve().then(function(){
+
+      var dispatcher = {
+        //url: "http://dispatcher-node-mongo2.paas.msv-project.com/register",
+        url: "http://130.230.142.100:8090/register"
+        method: "POST",
+        json: true
+      };
+
+      var serialNumber = pathObject.serialNumber;
+      var path = '/m2m/endpoints';
+      var url = urlJoin(impactHost, path, serialNumber);
+
+      var options = {
+        url: url,
+        //json: true,
+        headers: {
+          accept: "application/json",
+          Authorization: "Basic " + token
+        }
+      }
+      return options;
+    })
+    .then(function(options){
+      return requestP(options)
+    })
+    .then(function(resOfImpact){
+      console.log(resOfImpact);
+      var obj = resOfImpact;
+      //if(obj.requestId || obj.subscriptionId){
+      dispatcher.body = {
+        id: obj.requestId, //|| obj.subscriptionId,
+        url: deviceInfo.url + "/app/" + appId + "/api"
+      }
+  
+      console.log(dispatcher);
+
+        //var waitTill = new Date(new Date().getTime() + 5 * 1000);
+        //while(waitTill > new Date()){};
+
+      return requestP(dispatcher);
+        .then(function(resOfDispatcher){
+          return obj;
+        });
+    });
   }
 
   return impactServices;

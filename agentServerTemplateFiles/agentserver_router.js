@@ -52,7 +52,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter){
 
     require("./agent")(iotApp, emitter);
     
-    require("./" + appDescr.main)(iotApp, $router, $request, logger, $impactServices.listEndpoints);
+    require("./" + appDescr.main)(iotApp, $router, $request, logger, $impactServices.listEndpoints, $impactServices.getEndpointDetails);
     
     exApp.use("/api", $router);
 
