@@ -52,7 +52,7 @@ module.exports  = function(deviceManagerUrl, appId){
 
       var dispatcher = {
         //url: "http://dispatcher-node-mongo2.paas.msv-project.com/register",
-        url: "http://130.230.142.100:8090/register"
+        url: "http://130.230.142.100:8090/register",
         method: "POST",
         json: true
       };
@@ -88,7 +88,7 @@ module.exports  = function(deviceManagerUrl, appId){
         //var waitTill = new Date(new Date().getTime() + 5 * 1000);
         //while(waitTill > new Date()){};
 
-      return requestP(dispatcher);
+      return requestP(dispatcher)
         .then(function(resOfDispatcher){
           return obj;
         });
