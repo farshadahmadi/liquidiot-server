@@ -77,7 +77,7 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo){
     })
     .then(function(resOfImpact){
       console.log(resOfImpact);
-      var obj = JSON.stringify(resOfImpact);
+      var obj = JSON.parse(resOfImpact);
       //if(obj.requestId || obj.subscriptionId){
       dispatcher.body = {
         id: obj.requestId, //|| obj.subscriptionId,
