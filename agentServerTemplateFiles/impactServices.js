@@ -20,6 +20,31 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo){
   var impactServices = {};
   //const impactHost = "http://api.iot.nokia.com:9090/";
   const impactHost = "http://api.impact.nokia-innovation.io:9090/";
+  
+  impactServices.getNumberOfEndpoints = function(queryObject){
+
+   queryObject.startOffset = 0;
+   queryObject.endOffset = 0;
+   
+
+    var path = '/m2m/endpoints';
+    var qs = '?' + queryString.stringify(queryObject);
+    var url = urlJoin(impactHost, path, qs);
+
+    var options = {
+      url: url,
+      json: true,
+      headers: {
+        accept: "application/json",
+        Authorization: "Basic " + token
+      }
+    }
+
+    return requestP(options);
+      /*.then(function(res){
+        return res.totalDevices;
+      });*/
+  }
 
   //impactServices.listEndpoints = function(groupName, startOffset, endOffset){
   impactServices.listEndpoints = function(queryObject){
@@ -29,21 +54,33 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo){
       endOffset = 0;
     }*/
 
-    var path = '/m2m/endpoints';
-    //var qs = '?' + queryString.stringify({groupName: groupName, startOffset: startOffset, endOffset: endOffset});
-    var qs = '?' + queryString.stringify(queryObject);
-    var url = urlJoin(impactHost, path, qs);
+    return Promise.resolve().then(function(){
+      if(queryObject && (queryObject.startOffset === 0)){
+        throw new CustomError('startOffset must start from 1', 'startOffset must start from 1'); 
+      } else{
 
-    var options = {
-      url: url,
-      //json: true,
-      headers: {
-        accept: "application/json",
-        Authorization: "Basic " + token
+        var path = '/m2m/endpoints';
+        //var qs = '?' + queryString.stringify({groupName: groupName, startOffset: startOffset, endOffset: endOffset});
+        var qs = '?' + queryString.stringify(queryObject);
+        var url = urlJoin(impactHost, path, qs);
+
+        var options = {
+          url: url,
+          json: true,
+          headers: {
+            accept: "application/json",
+            Authorization: "Basic " + token
+          }
+        }
+        return options;
       }
-    }
+    }).then(function(options){
 
-    return requestP(options);
+      return requestP(options);
+        /*.then(function(res){
+          return res.directEndPoints;
+        });*/
+    });
   }
 
   impactServices.getEndpointDetails = function(pathObject){
@@ -82,6 +119,7 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo){
       dispatcher.body = {
         id: obj.requestId, //|| obj.subscriptionId,
         url: deviceInfo.url + "/app/" + appId + "/api"
+        //url: deviceInfo.url + "/app/" + appId + "/cb"
       }
   
       console.log(dispatcher);
@@ -91,7 +129,9 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo){
 
       return requestP(dispatcher)
         .then(function(resOfDispatcher){
-          return resOfImpact;
+          //return resOfImpact;
+          //return obj.requestId;
+          return obj;
         });
     });
   }
