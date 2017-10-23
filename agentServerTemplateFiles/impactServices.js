@@ -8,8 +8,8 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo){
   var urlJoin = require('url-join');
   var queryString = require('querystring');
   
-  const token = "ZmFyc2hhZGFobWFkaWdob2hhbmRpemk6RmFyc2hhZEA3MSE=";
-  //const token = "QWhtYWRpZ2hvaGFuZGl6aTpOb2tpYUA5MSE=" 
+  //const token = "ZmFyc2hhZGFobWFkaWdob2hhbmRpemk6RmFyc2hhZEA3MSE=";
+  const token = "QWhtYWRpZ2hvaGFuZGl6aTpOb2tpYUA5MSE=" 
 
   function CustomError(msg, reason){
     this.message = msg;
@@ -18,8 +18,33 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo){
   CustomError.prototype = new Error();
   
   var impactServices = {};
-  const impactHost = "http://api.iot.nokia.com:9090/";
-  //const impactHost = "http://api.impact.nokia-innovation:9090/";
+  //const impactHost = "http://api.iot.nokia.com:9090/";
+  const impactHost = "http://api.impact.nokia-innovation.io:9090/";
+  
+  impactServices.getNumberOfEndpoints = function(queryObject){
+
+   queryObject.startOffset = 0;
+   queryObject.endOffset = 0;
+   
+
+    var path = '/m2m/endpoints';
+    var qs = '?' + queryString.stringify(queryObject);
+    var url = urlJoin(impactHost, path, qs);
+
+    var options = {
+      url: url,
+      json: true,
+      headers: {
+        accept: "application/json",
+        Authorization: "Basic " + token
+      }
+    }
+
+    return requestP(options);
+      /*.then(function(res){
+        return res.totalDevices;
+      });*/
+  }
 
   //impactServices.listEndpoints = function(groupName, startOffset, endOffset){
   impactServices.listEndpoints = function(queryObject){
@@ -29,21 +54,86 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo){
       endOffset = 0;
     }*/
 
-    var path = '/m2m/endpoints';
-    //var qs = '?' + queryString.stringify({groupName: groupName, startOffset: startOffset, endOffset: endOffset});
-    var qs = '?' + queryString.stringify(queryObject);
-    var url = urlJoin(impactHost, path, qs);
+    return Promise.resolve().then(function(){
+      if(queryObject && (queryObject.startOffset === 0)){
+        throw new CustomError('startOffset must start from 1', 'startOffset must start from 1'); 
+      } else{
 
-    var options = {
-      url: url,
-      //json: true,
-      headers: {
-        accept: "application/json",
-        Authorization: "Basic " + token
+        var path = '/m2m/endpoints';
+        //var qs = '?' + queryString.stringify({groupName: groupName, startOffset: startOffset, endOffset: endOffset});
+        var qs = '?' + queryString.stringify(queryObject);
+        var url = urlJoin(impactHost, path, qs);
+
+        var options = {
+          url: url,
+          json: true,
+          headers: {
+            accept: "application/json",
+            Authorization: "Basic " + token
+          }
+        }
+        return options;
       }
-    }
+    }).then(function(options){
 
-    return requestP(options);
+      return requestP(options);
+        /*.then(function(res){
+          return res.directEndPoints;
+        });*/
+    });
+  }
+
+  impactServices.getEndpointDetails = function(pathObject){
+
+    var dispatcher = {
+       //url: "http://dispatcher-node-mongo2.paas.msv-project.com/register",
+      url: "http://130.230.142.100:8090/register",
+      method: "POST",
+      json: true
+    };
+    
+    return Promise.resolve().then(function(){
+
+
+      var serialNumber = pathObject.serialNumber;
+      var path = '/m2m/endpoints';
+      var url = urlJoin(impactHost, path, serialNumber);
+
+      var options = {
+        url: url,
+        //json: true,
+        headers: {
+          accept: "application/json",
+          Authorization: "Basic " + token
+        }
+      }
+      return options;
+    })
+    .then(function(options){
+      return requestP(options);
+    })
+    .then(function(resOfImpact){
+      console.log(resOfImpact);
+      var obj = JSON.parse(resOfImpact);
+      //if(obj.requestId || obj.subscriptionId){
+      dispatcher.body = {
+        id: obj.requestId, //|| obj.subscriptionId,
+        url: deviceInfo.url + "/app/" + appId + "/api"
+        //url: deviceInfo.url + "/app/" + appId + "/cb"
+      }
+  
+      console.log(dispatcher);
+
+        //var waitTill = new Date(new Date().getTime() + 5 * 1000);
+        //while(waitTill > new Date()){};
+
+      return requestP(dispatcher)
+        .then(function(resOfDispatcher){
+          //return resOfImpact;
+          //return obj.requestId;
+          return obj;
+        });
+    });
   }
 
   return impactServices;

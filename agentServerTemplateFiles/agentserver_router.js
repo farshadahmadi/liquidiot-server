@@ -2,6 +2,9 @@
 
 module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo){
 
+  var EventEmitter = require('events').EventEmitter;
+  var impactEvents = new EventEmitter();
+
   var fs = require("fs");
   var util = require("util");
   var bodyParser = require("body-parser");
@@ -52,7 +55,16 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
 
     require("./agent")(iotApp, emitter);
     
-    require("./" + appDescr.main)(iotApp, $router, $request, logger, $impactServices.listEndpoints);
+    require("./" + appDescr.main)(iotApp, $router, $request, logger, $impactServices.listEndpoints, $impactServices.getEndpointDetails, impactEvents, $impactServices.getNumberOfEndpoints);
+
+    $router.post("/", function(req, res){
+      //console.log(req.body.responses[0].resources[0].value);
+      //console.log(JSON.stringify(req.body.directEndPoints[0]));
+      //var body = JSON.parse(req.body);
+      //logger.log(JSON.stringify(req.body));
+      impactEvents.emit(req.body.id, JSON.stringify(req.body.data));
+      res.status(200).send("hello dispatcher!");
+    });
     
     exApp.use("/api", $router);
 
