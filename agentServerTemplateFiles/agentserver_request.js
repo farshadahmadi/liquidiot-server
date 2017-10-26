@@ -6,7 +6,8 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo){
   var requestP = require("request-promise");
   var slick = require("slick");
   var $request = require("request-promise");
-  const token = "ZmFyc2hhZGFobWFkaWdob2hhbmRpemk6RmFyc2hhZEA3MSE=";
+  //const token = "ZmFyc2hhZGFobWFkaWdob2hhbmRpemk6RmFyc2hhZEA3MSE=";
+  const token = "QWhtYWRpZ2hvaGFuZGl6aTpOb2tpYUA5MSE="
 
   function CustomError(msg, reason){
     this.message = msg;
@@ -56,7 +57,8 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo){
       json: true
     };
 
-    const impactUrl = "http://api.iot.nokia.com:9090/m2m";
+    //const impactUrl = "http://api.iot.nokia.com:9090/m2m";
+    const impactUrl = "http://api.impact.nokia-innovation.io:9090/m2m";
     options.url = impactUrl + (options.path || "/");
     //if(options.method == "POST" || options.method == "PUT"){
       options.json = true;

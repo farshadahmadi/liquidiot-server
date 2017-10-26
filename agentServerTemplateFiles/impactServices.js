@@ -86,7 +86,7 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo){
   impactServices.getEndpointDetails = function(pathObject){
 
     var dispatcher = {
-       //url: "http://dispatcher-node-mongo2.paas.msv-project.com/register",
+      //url: "http://dispatcher-node-mongo2.paas.msv-project.com/register",
       url: "http://130.230.142.100:8090/register",
       method: "POST",
       json: true
@@ -132,6 +132,60 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo){
           //return resOfImpact;
           //return obj.requestId;
           return obj;
+        });
+    });
+  }
+
+  impactServices.createLifecycleEventSubscription = function(bodyObject){
+
+    var dispatcher = {
+       //url: "http://dispatcher-node-mongo2.paas.msv-project.com/register",
+      url: "http://130.230.142.100:8090/register",
+      method: "POST",
+      json: true
+    };
+    
+    return Promise.resolve().then(function(){
+
+      //var serialNumber = pathObject.serialNumber;
+      var path = '/m2m/subscriptions?type=lifecycleEvents';
+      var url = urlJoin(impactHost, path);
+
+      var options = {
+        url: url,
+        method: 'POST',
+        json: true,
+        body: bodyObject,
+        headers: {
+          accept: "application/json",
+          Authorization: "Basic " + token
+        }
+      }
+      return options;
+    })
+    .then(function(options){
+      return requestP(options);
+    })
+    .then(function(resOfImpact){
+      console.log(resOfImpact);
+      //var obj = JSON.parse(resOfImpact);
+      //if(obj.requestId || obj.subscriptionId){
+      dispatcher.body = {
+        id: resOfImpact.subscriptionId, //|| obj.subscriptionId,
+        url: deviceInfo.url + "/app/" + appId + "/api"
+        //url: deviceInfo.url + "/app/" + appId + "/cb"
+      }
+  
+      console.log(dispatcher);
+
+        //var waitTill = new Date(new Date().getTime() + 5 * 1000);
+        //while(waitTill > new Date()){};
+
+      return requestP(dispatcher)
+        .then(function(resOfDispatcher){
+          //return resOfImpact;
+          //return obj.requestId;
+          return resOfImpact;
         });
     });
   }

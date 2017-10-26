@@ -55,7 +55,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
 
     require("./agent")(iotApp, emitter);
     
-    require("./" + appDescr.main)(iotApp, $router, $request, logger, $impactServices.listEndpoints, $impactServices.getEndpointDetails, impactEvents, $impactServices.getNumberOfEndpoints);
+    require("./" + appDescr.main)(iotApp, $router, $request, logger, $impactServices.listEndpoints, $impactServices.getEndpointDetails, impactEvents, $impactServices.getNumberOfEndpoints, $impactServices.createLifecycleEventSubscription);
 
     $router.post("/", function(req, res){
       //console.log(req.body.responses[0].resources[0].value);
