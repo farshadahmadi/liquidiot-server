@@ -2,8 +2,11 @@
 
 module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo){
 
+  var impact = {};
+  //var impactEvents = {};
+
   var EventEmitter = require('events').EventEmitter;
-  var impactEvents = new EventEmitter();
+  impact.event = new EventEmitter();
 
   var fs = require("fs");
   var util = require("util");
@@ -51,18 +54,21 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
 
     var $request = require("./agentserver_request")(RRUrl, appDescr.id, deviceInfo);
     
-    var $impactServices = require("./impactServices")(RRUrl, appDescr.id, deviceInfo);
+    require("./impactServices")(RRUrl, appDescr.id, deviceInfo, impact);
 
     require("./agent")(iotApp, emitter);
     
-    require("./" + appDescr.main)(iotApp, $router, $request, logger, $impactServices.listEndpoints, $impactServices.getEndpointDetails, impactEvents, $impactServices.getNumberOfEndpoints, $impactServices.createLifecycleEventSubscription);
+    //require("./" + appDescr.main)(iotApp, $router, $request, logger, $impactServices.listEndpoints, $impactServices.getEndpointDetails, impactEvents, $impactServices.getNumberOfEndpoints, $impactServices.createLifecycleEventSubscription);
+    require("./" + appDescr.main)(iotApp, $router, $request, logger, impact);
+
+    console.log(impact);
 
     $router.post("/", function(req, res){
       //console.log(req.body.responses[0].resources[0].value);
       //console.log(JSON.stringify(req.body.directEndPoints[0]));
       //var body = JSON.parse(req.body);
       //logger.log(JSON.stringify(req.body));
-      impactEvents.emit(req.body.id, JSON.stringify(req.body.data));
+      impact.event.emit(req.body.id, JSON.stringify(req.body.data));
       res.status(200).send("hello dispatcher!");
     });
     
