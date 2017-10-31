@@ -25,7 +25,8 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
   const impactHost = "http://api.iot.nokia.com:9090/";
   //const impactHost = "http://api.impact.nokia-innovation.io:9090/";
   //const dispatcherUrl = "http://dispatcher-node-mongo2.paas.msv-project.com/register";
-  const dispatcherUrl = "http://130.230.142.100:8082/register";
+  //const dispatcherUrl = "http://130.230.142.100:8082/register";
+  const dispatcherHost = "http://130.230.142.100:8082/";
   //const dispatcherUrl = "http://130.230.142.100:8090/register";
   
   impact.services.getNumberOfEndpoints = function(queryObject){
@@ -92,6 +93,8 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
 
   impact.services.getEndpointDetails = function(pathObject){
 
+   const dispatcherUrl = urlJoin(dispatcherHost, "register");
+
     var dispatcher = {
       url: dispatcherUrl,
       method: "POST",
@@ -124,7 +127,8 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
       //if(obj.requestId || obj.subscriptionId){
       dispatcher.body = {
         id: obj.requestId, //|| obj.subscriptionId,
-        url: deviceInfo.url + "/app/" + appId + "/api"
+        url: deviceInfo.url + "/app/" + appId + "/api",
+        mode: "once"
         //url: deviceInfo.url + "/app/" + appId + "/cb"
       }
   
@@ -143,6 +147,8 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
   }
 
   impact.services.createLifecycleEventSubscription = function(bodyObject){
+
+   const dispatcherUrl = urlJoin(dispatcherHost, "register");
 
     var dispatcher = {
       url: dispatcherUrl,
@@ -177,7 +183,9 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
       //if(obj.requestId || obj.subscriptionId){
       dispatcher.body = {
         id: resOfImpact.subscriptionId, //|| obj.subscriptionId,
-        url: deviceInfo.url + "/app/" + appId + "/api"
+        url: deviceInfo.url + "/app/" + appId + "/api",
+        appId: appId,
+        mode: "subscription"
         //url: deviceInfo.url + "/app/" + appId + "/cb"
       }
   
@@ -216,6 +224,82 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
     .then(function(options){
       return requestP(options);
     });
+  }
+
+  impact.services.getLifecycleEventSubscriptions = function(pathObject){
+
+    
+    return Promise.resolve().then(function(){
+
+
+      var path = '/m2m/subscriptions';
+      if(pathObject.groupName === ''){
+        delete pathObject.groupName;
+      }
+      pathObject.type = 'lifecycleEvents';
+      var qs = '?' + queryString.stringify(pathObject);
+      var url = urlJoin(impactHost, path, qs);
+
+      var options = {
+        url: url,
+        json: true,
+        headers: {
+          accept: "application/json",
+          Authorization: "Basic " + token
+        }
+      }
+      return options;
+    })
+    .then(function(options){
+      return requestP(options);
+    })
+     // resOfImpact is the list all lifecycle subscriptions this USER created so far
+    .then(function(resOfImpact){
+      console.log(resOfImpact);
+
+      const dispatcherUrl = urlJoin(dispatcherHost, appId, "subscriptions");
+
+      var dispatcher = {
+        url: dispatcherUrl,
+        method: "GET",
+        json: true
+      };
+  
+      console.log(dispatcher);
+
+      // resOfDispatcher is the list of all subscriptions this APP has created so far
+      return requestP(dispatcher)
+        .then(function(resOfDispatcher){
+          console.log(resOfDispatcher);
+          // the list of all lifecycle subscriptions created by USER must be filtered (narrowed down) to the ones created by this APP
+          var listOfSubs = resOfImpact.subscriptions.filter(function(sub){
+            return (resOfDispatcher.indexOf(sub.subscriptionId) !== -1)
+          });
+          return {subscriptions: listOfSubs};
+        });
+    });
+  }
+
+  impact.services.deleteAllSubscriptions = function(){
+
+    return impact.services.getLifecycleEventSubscriptions({groupName:''})
+      .then(function(listOfSubs){
+        console.log(listOfSubs);
+        return listOfSubs.subscriptions.map(sub => sub.subscriptionId);
+      })
+      .then(function(listOfSubIds){
+        console.log(listOfSubIds);
+        return listOfSubIds.map(function(subId){
+          return impact.services.deleteSubscription({subscriptionId: subId});
+        });
+      })
+      .then(function(promises){
+        return Promise.all(promises);
+      })
+      .then(function(){
+        return {msg: "Success"};
+      });
+
   }
 
   return impact;
