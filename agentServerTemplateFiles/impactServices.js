@@ -147,6 +147,17 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
   }
 
   impact.services.createLifecycleEventSubscription = function(bodyObject){
+    var path = '/m2m/subscriptions?type=lifecycleEvents';
+    return createEventSubscription(bodyObject, path);
+  }
+
+  impact.services.createResourceEventSubscription = function(bodyObject){
+    var path = '/m2m/subscriptions?type=resources';
+    return createEventSubscription(bodyObject, path);
+  }
+
+  //impact.services.createLifecycleEventSubscription = function(bodyObject){
+  function createEventSubscription(bodyObject, path){
 
    const dispatcherUrl = urlJoin(dispatcherHost, "register");
 
@@ -158,8 +169,7 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
     
     return Promise.resolve().then(function(){
 
-      //var serialNumber = pathObject.serialNumber;
-      var path = '/m2m/subscriptions?type=lifecycleEvents';
+      //var path = '/m2m/subscriptions?type=lifecycleEvents';
       var url = urlJoin(impactHost, path);
 
       var options = {
