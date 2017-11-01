@@ -32,6 +32,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   var apps = {};
   var ports = [];
 
+  var impacts = [];
+
   var templatesDir = "./agentServerTemplateFiles/";
 
 
@@ -510,6 +512,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
               }
             });
           } else {*/
+        deleteAllSubscriptions(aid, 'blue')
+          .then(function(response){ 
+
             blueAppDescr.status = blueAppStatus;
             var greenAppDescr = appDescr.green;
             if(greenAppDescr.firstStartAfterCrash){
@@ -552,7 +557,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                 }
               });
             }
-         // }
+
+          });
+
         }
       });
     }
@@ -690,7 +697,11 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                       console.log("ADD to dm response: " + ress); //
                     } //
                     fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8"); //
-                  
+                 
+                    // delete all subscriptions the app created to impact before instanciating a blue app
+                    deleteAllSubscriptions(aid, "blue")
+                      .then(function(response){ 
+ 
                     instanciate(greenAppDescr, env.green, function(err, greenAppStatus, deploymentErr){
                       if(err) {
                         callback(err);
@@ -712,7 +723,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                           }
                         });
                       }
-                    }); 
+                    });
+                     }); 
                   });
               }).catch(function(err){
                 callback(err);
@@ -846,6 +858,10 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                 var appServerTemp = allInstances[aid][env.green];
                 allInstances[aid][env.green] = allInstances[aid][env.blue];
                 allInstances[aid][env.blue] = appServerTemp;
+                
+                var impactTemp = impacts[aid][env.green];
+                impacts[aid][env.green] = impacts[aid][env.blue];
+                impacts[aid][env.blue] = impactTemp;
 
                 callback(null);
               }
@@ -1052,7 +1068,10 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     var emitter = new EventEmitter();
     //app1.$emitter = emitter;
 
-    require(appDirForRequire + startServerFile)(app1, port, appDescr, deviceManagerUrl, appDir, emitter, deviceInfo);
+    impacts[aid] = impacts[aid] || {};
+    impacts[aid][env] = {};
+
+    require(appDirForRequire + startServerFile)(app1, port, appDescr, deviceManagerUrl, appDir, emitter, deviceInfo, impacts[aid][env]);
     
     var time = setTimeout(function(){
       fs.appendFileSync(appDir + "debug.log", 'app did not specify when either initialize or task function should end' + "\n", "utf8");
@@ -1095,6 +1114,11 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
         res.status(404).send(err.toString());
       } else {
         var blueAppDescr = appDescr.blue;
+
+        deleteAllSubscriptions(aid, 'blue')
+          .then(function(response){
+            console.log(response);
+
         deleteApp(aid, appDescr, env.blue, function(err){
           if(err){
             res.status(500).send(err.toString());
@@ -1111,8 +1135,12 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             });
           }
         });
+
+          });
       }
     });
+
+
  /*       var greenAppDescr = appDescr.green;
         var blueAppDescr = appDescr.blue;
         if(!greenAppDescr) {
@@ -1155,6 +1183,17 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       }
     });*/
   });
+
+  // Deletes all event subscriptions created by the app to impact.
+  function deleteAllSubscriptions(aid, env){
+    return impacts[aid][env].services.deleteAllSubscriptions()
+          .then(function(res){
+            return res;
+          })
+          .catch(function(err){
+            return err;
+          });
+  }
 
   function deleteApp(aid, appDescr, environment, callback){
 
@@ -1213,7 +1252,10 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     var aid = appDescr.id;
     var appDir = (env == "green") ? "./app/" + aid + "/green/" : "./app/" + aid + "/";
     //var appDir = "./app/" + aid + "/" + env + "/";
-    
+   
+    //deleteAllSubscriptions(aid, env)
+      //.then(function(response){
+ 
     rimraf(appDir, function(err){
       if(err) {
         console.log(err.toString());
@@ -1260,6 +1302,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
         }
       }
     });
+
+    //});
+
   }
 
   app.get("/app/:aid", function(req, res){

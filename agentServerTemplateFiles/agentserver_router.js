@@ -1,8 +1,8 @@
 'use strict'
 
-module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo){
+module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo, impact){
 
-  var impact = {};
+  //var impact = {};
   //var impactEvents = {};
 
   var EventEmitter = require('events').EventEmitter;
