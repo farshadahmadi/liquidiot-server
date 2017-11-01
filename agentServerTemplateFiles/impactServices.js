@@ -227,8 +227,18 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
   }
 
   impact.services.getLifecycleEventSubscriptions = function(pathObject){
+    pathObject.type = 'lifecycleEvents';
+    return getEventSubscriptions(pathObject);
+  }
 
-    
+  impact.services.getResourceEventSubscriptions = function(pathObject){
+    pathObject.type = 'resources';
+    return getEventSubscriptions(pathObject);
+  }
+
+  function getEventSubscriptions(pathObject){
+  //impact.services.getLifecycleEventSubscriptions = function(pathObject){
+  
     return Promise.resolve().then(function(){
 
 
@@ -236,7 +246,7 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
       if(pathObject.groupName === ''){
         delete pathObject.groupName;
       }
-      pathObject.type = 'lifecycleEvents';
+      //pathObject.type = 'lifecycleEvents';
       var qs = '?' + queryString.stringify(pathObject);
       var url = urlJoin(impactHost, path, qs);
 
@@ -271,7 +281,7 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
       return requestP(dispatcher)
         .then(function(resOfDispatcher){
           console.log(resOfDispatcher);
-          // the list of all lifecycle subscriptions created by USER must be filtered (narrowed down) to the ones created by this APP
+          // the list of all lifecycle subscriptions created by USER must be filtered by (narrowed down to) the ones created by this APP
           var listOfSubs = resOfImpact.subscriptions.filter(function(sub){
             return (resOfDispatcher.indexOf(sub.subscriptionId) !== -1)
           });
