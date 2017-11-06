@@ -236,6 +236,50 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
     });
   }
 
+  // get all events subscriptions (both lifecycle and resource)
+  impact.services.getAllEventSubscriptions = function(pathObject){
+    
+   // get lifecycle event subscription
+    return impact.services.getLifecycleEventSubscriptions(pathObject)
+             // successsull means there are lifecycle events subscription 
+             .then(function(lifecycleSubs){
+               // get resource event subscription
+               return impact.services.getResourceEventSubscriptions(pathObject)
+                        // successful means there are resource event subscription
+                        .then(function(resourceSubs){
+                          var ls = lifecycleSubs.subscriptions;
+                          var rs = resourceSubs.subscriptions;
+                          // concat the event resources to lifecycle esources
+                          ls.push.apply(ls, rs);
+                          return {subscriptions: ls};
+                        })
+                        // error means either there are not resource event (with status code 404) or there are other kind of errors
+                        .catch(function(err){
+                          // in case of 404, the list of all events will be the list of lifecycle events (since there are no resource events)
+                          if(err.statusCode === 404){
+                            return lifecycleSubs;
+                          } else {
+                            throw err;
+                          }
+                        });
+             })
+             // error means either there are not lifecycle events (with status code 404) or there are other kind of errors
+             // in case of 404, the list of all events will be the list of resource events (since there are no lifecycle events)
+             .catch(function(err){
+               if(err.statusCode === 404){
+                 // get resource event subscription
+                 return impact.services.getResourceEventSubscriptions(pathObject)
+                          // successsull means there are resource event subscriptions 
+                          .then(function(resourceSubs){
+                            return resourceSubs; 
+                          })
+                 
+               } else {
+                 throw err;
+               }
+             });
+  }
+
   impact.services.getLifecycleEventSubscriptions = function(pathObject){
     pathObject.type = 'lifecycleEvents';
     return getEventSubscriptions(pathObject);
@@ -302,7 +346,7 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
 
   impact.services.deleteAllSubscriptions = function(){
 
-    return impact.services.getLifecycleEventSubscriptions({groupName:''})
+    return impact.services.getAllEventSubscriptions({groupName:''})
       .then(function(listOfSubs){
         console.log(listOfSubs);
         return listOfSubs.subscriptions.map(sub => sub.subscriptionId);
@@ -316,6 +360,7 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
       .then(function(promises){
         return Promise.all(promises);
       })
+      // Following API documentation design, if all subscriptions are deleted successfully, just says successfull 
       .then(function(){
         return {msg: "Success"};
       });
