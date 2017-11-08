@@ -24,10 +24,12 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
 
   const impactHost = "http://api.iot.nokia.com:9090/";
   //const impactHost = "http://api.impact.nokia-innovation.io:9090/";
+  
   //const dispatcherUrl = "http://dispatcher-node-mongo2.paas.msv-project.com/register";
   //const dispatcherUrl = "http://130.230.142.100:8082/register";
+
   const dispatcherHost = "http://130.230.142.100:8082/";
-  //const dispatcherUrl = "http://130.230.142.100:8090/register";
+  //const dispatcherHost = "http://130.230.142.100:8090/";
   
   impact.services.getNumberOfEndpoints = function(queryObject){
 
@@ -110,7 +112,7 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
 
       var options = {
         url: url,
-        //json: true,
+        json: true,
         headers: {
           accept: "application/json",
           Authorization: "Basic " + token
@@ -123,10 +125,11 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
     })
     .then(function(resOfImpact){
       console.log(resOfImpact);
-      var obj = JSON.parse(resOfImpact);
+      //var obj = JSON.parse(resOfImpact);
       //if(obj.requestId || obj.subscriptionId){
       dispatcher.body = {
-        id: obj.requestId, //|| obj.subscriptionId,
+        //id: obj.requestId, //|| obj.subscriptionId,
+        id: resOfImpact.requestId, //|| obj.subscriptionId,
         url: deviceInfo.url + "/app/" + appId + "/api",
         mode: "once"
         //url: deviceInfo.url + "/app/" + appId + "/cb"
@@ -139,9 +142,9 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
 
       return requestP(dispatcher)
         .then(function(resOfDispatcher){
-          //return resOfImpact;
+          return resOfImpact;
           //return obj.requestId;
-          return obj;
+          //return obj;
         });
     });
   }
@@ -361,11 +364,90 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
         return Promise.all(promises);
       })
       // Following API documentation design, if all subscriptions are deleted successfully, just says successfull 
-      .then(function(){
+      .then(function(res){
         return {msg: "Success"};
       });
 
   }
+
+  impact.services.getSubscriptionDetails = function(pathObject){
+   
+    return Promise.resolve().then(function(){
+
+      var path = '/m2m/subscriptions';
+      var url = urlJoin(impactHost, path, pathObject.subscriptionId);
+
+      var options = {
+        url: url,
+        json: true,
+        headers: {
+          accept: "application/json",
+          Authorization: "Basic " + token
+        }
+      }
+      return options;
+    })
+    .then(function(options){
+      return requestP(options);
+    });
+  }
+
+  impact.services.readResource = function(pathObject){
+
+   const dispatcherUrl = urlJoin(dispatcherHost, "register");
+
+    var dispatcher = {
+      url: dispatcherUrl,
+      method: "POST",
+      json: true
+    };
+    
+    return Promise.resolve().then(function(){
+
+      var path = '/m2m/endpoints';
+      var url = urlJoin(impactHost, path, pathObject.serialNumber, pathObject.resourcePath);
+
+      var options = {
+        url: url,
+        //method: 'POST',
+        json: true,
+        //body: bodyObject,
+        headers: {
+          accept: "application/json",
+          Authorization: "Basic " + token
+        }
+      }
+      return options;
+    })
+    .then(function(options){
+      return requestP(options);
+    })
+    .then(function(resOfImpact){
+      console.log(resOfImpact);
+      //var obj = JSON.parse(resOfImpact);
+      //if(obj.requestId || obj.subscriptionId){
+      dispatcher.body = {
+        id: resOfImpact.requestId, //|| obj.subscriptionId,
+        url: deviceInfo.url + "/app/" + appId + "/api",
+        //appId: appId,
+        mode: "once"
+        //url: deviceInfo.url + "/app/" + appId + "/cb"
+      }
+  
+      console.log(dispatcher);
+
+        //var waitTill = new Date(new Date().getTime() + 5 * 1000);
+        //while(waitTill > new Date()){};
+
+      return requestP(dispatcher)
+        .then(function(resOfDispatcher){
+          //return resOfImpact;
+          //return obj.requestId;
+          return resOfImpact;
+        });
+    });
+  }
+
 
   return impact;
 }
