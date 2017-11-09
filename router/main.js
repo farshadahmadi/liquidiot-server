@@ -236,7 +236,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     installApp_P(req, aid, environment)
       .then(function(appDescr){
         appDescr.id = aid;
-        appDescr.status = "installed";
+        appDescr.status = "running";
+        //appDescr.status = "installed";
         appDescr.canRollback = false;
         apps[aid] = {};
         apps[aid][environment] = appDescr;
@@ -252,16 +253,16 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             if(err) {
               res.status(500).send(err.toString());
             } else {
-              if(appStatus == "installed"){
-                res.status(500).send(JSON.stringify(appDescr));
-              } else {
-                appDescr.status = appStatus;
-                dm.updateAppInfo(appDescr, function(err, ress){
-                  if(err) {
-                    console.log(err.toString());
-                  } else {
-                    console.log("ADD to dm response: " + ress);
-                  }
+              //if(appStatus == "installed"){
+              //  res.status(500).send(JSON.stringify(appDescr));
+              //} else {
+                //appDescr.status = appStatus;
+                //dm.updateAppInfo(appDescr, function(err, ress){
+                  //if(err) {
+                  //  console.log(err.toString());
+                  //} else {
+                  //  console.log("ADD to dm response: " + ress);
+                  //}
                   fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8");
                   if(appStatus == "crashed"){
                     // We can also sent back deployment error (deploymentErr) here.
@@ -269,8 +270,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                   } else {
                     res.status(200).send(JSON.stringify(appDescr));
                   }
-                });
-              }
+                //});
+              //}
             }
           });
         });
@@ -1000,7 +1001,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             var env = (appInBlue != -1) ? "blue" : "green";
             var appDescr = appDescription[env];
 
-            if(appDescr.status == "installed"){
+            /*if(appDescr.status == "installed"){
               fs.appendFileSync(appDir1 + "debug.log", error.stack + "\n", "utf8");
               console.log("aid from installed: " + idOfApp);
               appDescr.status = "crashed";
@@ -1008,16 +1009,19 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
               //delete allInstances[idOfApp][env];
               delete reservedPorts[ports[idOfApp][env]];
               callbacks[idOfApp](null, "crashed", err);
-            } else if(appDescr.status == "running") {
+            } else*/ if(appDescr.status == "running") {
+
+              console.log(new Date().getTime());
 
               fs.appendFileSync(appDir1 + "debug.log", error.stack + "\n", "utf8");
-              fs.appendFileSync(appDir1 + "debug.log", "stopping the application due to error ...\n", "utf8");
+              //fs.appendFileSync(appDir1 + "debug.log", "stopping the application due to error ...\n", "utf8");
+              fs.appendFileSync(appDir1 + "debug.log", "Application crashed due to error ...\n", "utf8");
               
-              startOrStopInstance({status: "paused"}, idOfApp, env, function(err){
-                if(err){
-                  console.log(err);
-                } else {
-                  console.log("aid from runtime: " + idOfApp);
+              //startOrStopInstance({status: "paused"}, idOfApp, env, function(err){
+              //  if(err){
+              //    console.log(err);
+              //  } else {
+              //    console.log("aid from runtime: " + idOfApp);
                   appDescr.status = "crashed";
                   dm.updateAppInfo(appDescr, function(err, response){
                     if(err){
@@ -1030,8 +1034,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                   allInstances[idOfApp][env].server.close();
                   //delete allInstances[idOfApp][env];
                   delete reservedPorts[ports[idOfApp][env]];
-                }
-              });
+              //  }
+              //});
             } else if(appDescr.status == "crashed") {
               fs.appendFileSync(appDir1 + "debug.log", error.stack + "\n", "utf8");
             }
@@ -1070,29 +1074,35 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
     impacts[aid] = impacts[aid] || {};
     impacts[aid][env] = {};
+    
+    allInstances[aid] = allInstances[aid] || {};
+    allInstances[aid][env] = app1;
 
     require(appDirForRequire + startServerFile)(app1, port, appDescr, deviceManagerUrl, appDir, emitter, deviceInfo, impacts[aid][env]);
+
+    //if(appDescr.status == "installed"){
+      //appDescr.status = "running";
+      //console.log("from init to running");
+      callback(null, "running");
+    //}
     
-    var time = setTimeout(function(){
+    /*var time = setTimeout(function(){
       fs.appendFileSync(appDir + "debug.log", 'app did not specify when either initialize or task function should end' + "\n", "utf8");
       appDescr.status = "crashed";
       allInstances[aid][env].server.close();
       delete reservedPorts[ports[aid][env]];
       callback(null, "crashed", new Error('app did not specify when either initialize or task function should end'));
-    }, 10000);
+    }, 10000);*/
 
-    //allInstances[aid] = app1;
-    allInstances[aid] = allInstances[aid] || {};
-    allInstances[aid][env] = app1;
     
-    emitter.on('started', function(){
+    /*emitter.on('started', function(){
       if(appDescr.status == "installed"){
         clearTimeout(time);
         appDescr.status = "running";
         console.log("from init to running");
         callback(null, "running");
       }
-    });
+    });*/
   }
   
 
@@ -1281,24 +1291,18 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
           callback(null);
         } else {
           console.log("Second Step");
-          startOrStopInstance({status: "paused"}, aid, env, function(err){
-            if(err){
-              callback(err);
-            } else {
-              console.log("Third Step");
-           // if(appDescr.status !== "crashed"){
+          //startOrStopInstance({status: "paused"}, aid, env, function(err){
+          //  if(err){
+          //    callback(err);
+          //  } else {
+          //    console.log("Third Step");
               allInstances[aid][env].server.close();
               delete allInstances[aid][env];
               delete reservedPorts[ports[aid][env]];
-            //}
               delete apps[aid][env];
-              /*if(env == "blue"){
-                //delete apps[aid];
-              }*/
-              //apps.splice(apps.indexOf(appDescr), 1);
               callback(null);
-            }
-          });
+          //  }
+          //});
         }
       }
     });

@@ -12,7 +12,7 @@ module.exports = function(exApp, exAppServer, iotApp, emitter) {
   }
 	
   status.status = "running";
-  iotApp.start();
+  //iotApp.start();
 
   exApp.put("/", function(req, res){
     var data = "";

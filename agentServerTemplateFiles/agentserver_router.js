@@ -14,13 +14,14 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
 
   var express = require('express');
 
-  var log_file = fs.createWriteStream(cwd + "debug.log", {flags : "a"});
+  //var log_file = fs.createWriteStream(cwd + "debug.log", {flags : "a"});
 
   var logger = {};
 
   logger.log = function(d){
     console.log(d);
-    log_file.write(util.format(d) + "\n");
+    fs.appendFileSync(cwd + "debug.log", util.format(d) + "\n", "utf8");
+    //log_file.write(util.format(d) + "\n");
   }
 
   var exAppServer = exApp.listen(port, function(){
