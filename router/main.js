@@ -111,8 +111,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   });
 
   app.use(function(req, res, next){
-    console.log('origin');
-    console.log(req.get('host'));
+    //console.log('origin');
+    //console.log(req.get('host'));
     var flag = false;
     //if(req.headers.origin === "http://koodain.herokuapp.com"){
     if(req.headers.origin){
