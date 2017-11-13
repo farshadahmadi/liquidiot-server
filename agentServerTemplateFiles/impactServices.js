@@ -219,6 +219,7 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
   impact.services.deleteSubscription = function(pathObject){
 
     return Promise.resolve().then(function(){
+
       var path = '/m2m/subscriptions';
       var subscriptionId = pathObject.subscriptionId;
       var url = urlJoin(impactHost, path, subscriptionId);
@@ -236,6 +237,25 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
     })
     .then(function(options){
       return requestP(options);
+    })
+    .then(function(resOfImpact){
+
+      const dispatcherUrl = urlJoin(dispatcherHost, "app", appId, "subscription", pathObject.subscriptionId);
+
+      var dispatcher = {
+        url: dispatcherUrl,
+        method: "DELETE",
+        json: true
+      };
+
+      return requestP(dispatcher)
+        .then(function(resOfDispatcher){
+          console.log('res of dispatcher:');
+          console.log(resOfDispatcher);
+          //return resOfImpact;
+          //return obj.requestId;
+          return resOfImpact;
+        });
     });
   }
 
