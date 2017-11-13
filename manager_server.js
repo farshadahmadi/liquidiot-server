@@ -114,7 +114,9 @@ function registerToDeviceManager(config, callback){
                         }
                     });
                 } else {
-                    console.log(err.toString());
+                    //console.log(err.toString());
+                    console.log(err);
+                    cosnole.log(res);
                     callback(err);
                 }
             });
