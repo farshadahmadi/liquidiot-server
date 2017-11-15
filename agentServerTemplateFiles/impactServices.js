@@ -8,8 +8,8 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
   var urlJoin = require('url-join');
   var queryString = require('querystring');
   
-  const token = "ZmFyc2hhZGFobWFkaWdob2hhbmRpemk6RmFyc2hhZEA3MSE=";
-  //const token = "QWhtYWRpZ2hvaGFuZGl6aTpOb2tpYUA5MSE=" 
+  //const token = "ZmFyc2hhZGFobWFkaWdob2hhbmRpemk6RmFyc2hhZEA3MSE=";
+  const token = "QWhtYWRpZ2hvaGFuZGl6aTpOb2tpYUA5MSE=" 
 
   function CustomError(msg, reason){
     this.message = msg;
@@ -22,15 +22,16 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
     services: {}
   };*/
 
-  const impactHost = "http://api.iot.nokia.com:9090/";
-  //const impactHost = "http://api.impact.nokia-innovation.io:9090/";
+  //const impactHost = "http://api.iot.nokia.com:9090/";
+  const impactHost = "http://api.impact.nokia-innovation.io:9090/";
   
   //const dispatcherUrl = "http://dispatcher-node-mongo2.paas.msv-project.com/register";
   //const dispatcherUrl = "http://130.230.142.100:8082/register";
 
-  const dispatcherHost = "http://130.230.142.100:8082/";
+  //const dispatcherHost = "http://130.230.142.100:8082/";
   //const dispatcherHost = "http://130.230.142.100:8090/";
-  
+  const dispatcherHost = "http://callback-impact-ide.paas.msv-project.com/"
+ 
   impact.services.getNumberOfEndpoints = function(queryObject){
 
    queryObject.startOffset = 0;
