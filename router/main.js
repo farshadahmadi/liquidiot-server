@@ -1331,7 +1331,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
           //  } else {
           //    console.log("Third Step");
               //allInstances[aid][env].server.close();
-              killer(allInstances[aid][env].pid);
+              //killer(allInstances[aid][env].pid);
+              //process.kill(allInstances[aid][env].pid, 'SIGTERM');
+              allInstances[aid][env].kill();
               delete allInstances[aid][env];
               delete reservedPorts[ports[aid][env]];
               delete apps[aid][env];

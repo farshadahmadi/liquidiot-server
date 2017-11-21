@@ -15,8 +15,32 @@
   var deviceInfo = JSON.parse(process.argv[6]);
 
   process.on('uncaughtException', function(error){
+    console.log('uncaughtException');
     fs.appendFileSync("../debug.log", error.stack, "utf8");
-    throw error;
+    process.exit(99);
+    //throw error;
+  });
+
+  process.on('cleanup', function(){
+    console.log('Do cleanup here');
+    impact.services.deleteAllSubscriptions()
+          .then(function(res){
+            console.log(res);
+          })
+          .catch(function(err){
+            console.log(err);
+          });
+  });
+
+  // do app specific cleaning before exiting
+  process.on('exit', function () {
+    process.emit('cleanup');
+  });
+  
+  // catch kill event and exit normally
+  process.on('SIGTERM', function () {
+    console.log('SIGTERM');
+    process.exit(2);
   });
 
   var EventEmitter = require('events').EventEmitter;
