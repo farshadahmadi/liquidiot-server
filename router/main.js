@@ -11,6 +11,9 @@
 
 module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
+  var spawn = require("child_process").spawn;
+  var killer = require('tree-kill');
+
   var fs = require("fs.extra");
   var rimraf = require("rimraf");
   var portscanner = require("portscanner");
@@ -1059,8 +1062,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
     //var environment = appDescr.environment;
     var appDirForRequire = "../app/" + aid + "/" + env + "/";
-    //var appDir = "./app/" + aid + "/" + env + "/";
-    var appDir = "./app/" + aid + "/";
+    var appDir = "./app/" + aid + "/" + env + "/";
+    //var appDir = "./app/" + aid + "/";
     var startServerFile = "agentserver_router.js";
 
     console.log("availabe port at: " + port);
@@ -1076,9 +1079,40 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     impacts[aid][env] = {};
     
     allInstances[aid] = allInstances[aid] || {};
-    allInstances[aid][env] = app1;
+    //allInstances[aid][env] = app1;
 
-    require(appDirForRequire + startServerFile)(app1, port, appDescr, deviceManagerUrl, appDir, emitter, deviceInfo, impacts[aid][env]);
+    //require(appDirForRequire + startServerFile)(app1, port, appDescr, deviceManagerUrl, appDir, emitter, deviceInfo, impacts[aid][env]);
+
+    var child = spawn("node", ["./" + startServerFile, port, JSON.stringify(appDescr), deviceManagerUrl, appDir, JSON.stringify(deviceInfo)], {cwd: appDir});
+    allInstances[aid][env] = child;
+
+
+    child.stdout.on('data', function(data){
+      console.log("stdout: " + data);
+    });
+
+
+    child.stderr.on('data', function(data){
+      console.log("stderr: " + String(data));
+    });
+
+    child.on('exit', function(code, signal){
+      
+      console.log("exit code: " + code);
+      console.log("signal: " + signal);
+      
+      appDescr.status = "crashed";
+      dm.updateAppInfo(appDescr, function(err, response){
+        if(err){
+          console.log(err.toString());
+        } else {
+          console.log("update on dm response: " + response);
+        }
+      });
+
+      //delete reservedPorts[ports[aid][env]];
+      delete reservedPorts[port];
+    });
 
     //if(appDescr.status == "installed"){
       //appDescr.status = "running";
@@ -1125,9 +1159,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       } else {
         var blueAppDescr = appDescr.blue;
 
-        deleteAllSubscriptions(aid, 'blue')
-          .then(function(response){
-            console.log(response);
+        //deleteAllSubscriptions(aid, 'blue')
+        //  .then(function(response){
+        //    console.log(response);
 
         deleteApp(aid, appDescr, env.blue, function(err){
           if(err){
@@ -1146,7 +1180,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
           }
         });
 
-          });
+        //  });
       }
     });
 
@@ -1271,7 +1305,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
         console.log(err.toString());
         callback(err);
       } else {
-        try {
+        /*try {
           if(env == "green"){
             delete require.cache[require.resolve("../app/" + aid + "/green/agentserver_router.js")];
           } else {
@@ -1279,7 +1313,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
           }
         } catch(e){
           console.log(e.toString());
-        }
+        }*/
 
         if(appDescr.status == "crashed" || appDescr.firstStartAfterCrash) {
           delete allInstances[aid][env];
@@ -1296,7 +1330,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
           //    callback(err);
           //  } else {
           //    console.log("Third Step");
-              allInstances[aid][env].server.close();
+              //allInstances[aid][env].server.close();
+              killer(allInstances[aid][env].pid);
               delete allInstances[aid][env];
               delete reservedPorts[ports[aid][env]];
               delete apps[aid][env];

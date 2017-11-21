@@ -1,9 +1,23 @@
 'use strict'
 
-module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo, impact){
+//module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo, impact){
 
-  //var impact = {};
+  var impact = {};
+  var emitter = {};
   //var impactEvents = {};
+  
+  var exApp = require('express')();
+
+  var port = process.argv[2];
+  var appDescr = JSON.parse(process.argv[3]);
+  var RRUrl = process.argv[4];
+  var cwd = process.argv[5];
+  var deviceInfo = JSON.parse(process.argv[6]);
+
+  process.on('uncaughtException', function(error){
+    fs.appendFileSync("../debug.log", error.stack, "utf8");
+    throw error;
+  });
 
   var EventEmitter = require('events').EventEmitter;
   impact.event = new EventEmitter();
@@ -20,13 +34,15 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
 
   logger.log = function(d){
     console.log(d);
-    fs.appendFileSync(cwd + "debug.log", util.format(d) + "\n", "utf8");
+    //fs.appendFileSync(cwd + "debug.log", util.format(d) + "\n", "utf8");
+    fs.appendFileSync("../debug.log", util.format(d) + "\n", "utf8");
     //log_file.write(util.format(d) + "\n");
   }
 
   var exAppServer = exApp.listen(port, function(){
+  //exApp.listen(port, function(){
 
-    try {
+    /*try {
       if (require.cache[require.resolve("./agentserver_handlers.js")]){
         delete require.cache[require.resolve("./agentserver_handlers.js")];
       }
@@ -44,7 +60,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
       }
     }catch(error){
       console.log(error);
-    }
+    }*/
 
     exApp.server = exAppServer;
     
@@ -79,5 +95,5 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
 
   });
 
-}
+//}
 
