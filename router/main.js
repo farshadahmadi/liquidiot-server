@@ -1098,20 +1098,24 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
     child.on('exit', function(code, signal){
       
-      console.log("exit code: " + code);
+      console.log("exit code: " + code + typeof code);
       console.log("signal: " + signal);
-      
-      appDescr.status = "crashed";
-      dm.updateAppInfo(appDescr, function(err, response){
-        if(err){
-          console.log(err.toString());
-        } else {
-          console.log("update on dm response: " + response);
-        }
-      });
 
-      //delete reservedPorts[ports[aid][env]];
-      delete reservedPorts[port];
+      console.log();     
+        
+      if(code === 99){
+        appDescr.status = "crashed";
+        dm.updateAppInfo(appDescr, function(err, response){
+          if(err){
+            console.log(err.toString());
+          } else {
+            console.log("update on dm response: " + response);
+          }
+        });
+
+        //delete reservedPorts[ports[aid][env]];
+        delete reservedPorts[port];
+      }
     });
 
     //if(appDescr.status == "installed"){
@@ -1174,7 +1178,10 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
               } else {
                 console.log("RAMOVE from dm response: " + response);
               }
-              fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8");
+              //try {
+                fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8");
+              //} catch(err){console.log(err);}
+              //console.log('before error???');
               res.status(200).send("App is deleted.");
             });
           }
