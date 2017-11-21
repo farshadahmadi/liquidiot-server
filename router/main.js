@@ -295,6 +295,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     function onGetAppDescr(appDescription){
       return copyFilesToAppDir_P(aid, environment)
                 .then(function(res){
+                  console.log('copy files to app dir:');
                   console.log(res);
                   return onCopyFilesToAppDir(appDescription);
                 });
@@ -670,19 +671,22 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
         console.log("Third blue app description: " + JSON.stringify(appDescr.blue));
         console.log("Third blue app description: " + JSON.stringify(blueAppDescr));
 
+        stopAppEnv(blueAppDescr, env.blue, function(err){
         //if(!blueAppDescr.firstStartAfterCrash){
-          startOrStopInstance({status: "paused"}, aid, env.blue, function(err, blueAppStatus){
+          //startOrStopInstance({status: "paused"}, aid, env.blue, function(err, blueAppStatus){
             if(err){
-              //res.status(500).send(err.toString());
+              res.status(500).send(err.toString());
               callback(err);
             } else {
-              console.log("result of stop status: " + blueAppStatus);
-              blueAppDescr.status = blueAppStatus;
+              //console.log("result of stop status: " + blueAppStatus);
+              //blueAppDescr.status = blueAppStatus;
+              var blueAppStatus = blueAppDescr.status;
               console.log("bbbbbbbbbbbbbbbbbbb:" + JSON.stringify(blueAppDescr));
               
               installApp_P(req, aid, env.green).then(function(greenAppDescr){
                   greenAppDescr.id = aid;
-                  greenAppDescr.status = "installed";
+                  greenAppDescr.status = "running";
+                  //greenAppDescr.status = "installed";
                   apps[aid][env.green] = greenAppDescr;
                   
                   if(blueAppStatus == "crashed"){
@@ -690,6 +694,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                   } else {
                     greenAppDescr.canRollback = true;
                   }
+                  
+                  console.log('returned green app descr:');
+                  console.log(greenAppDescr);
                   
                   dm.updateAppInfo(greenAppDescr, function(err, ress){ //
                     if(err) { //
@@ -707,7 +714,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                       if(err) {
                         callback(err);
                       } else {
-                        greenAppDescr.status = greenAppStatus;
+                        //greenAppDescr.status = greenAppStatus;
                         /*if(blueAppStatus == "crashed"){
                           greenAppDescr.canRollback = false;
                         } else {
@@ -1203,6 +1210,81 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
           .catch(function(err){
             return err;
           });
+  }
+
+  function stopAppEnv(appDescr, env, callback){
+
+    var aid = appDescr.id;
+    var appDir = (env == "green") ? "./app/" + aid + "/green/" : "./app/" + aid + "/";
+    //var appDir = "./app/" + aid + "/" + env + "/";
+   
+    //deleteAllSubscriptions(aid, env)
+      //.then(function(response){
+ 
+    //rimraf(appDir, function(err){
+    //  if(err) {
+    //    console.log(err.toString());
+    //    callback(err);
+    //  } else {
+        try {
+          if(env == "green"){
+            delete require.cache[require.resolve("../app/" + aid + "/green/agentserver_router.js")];
+          } else {
+            console.log('cashes are being deleted');
+            delete require.cache[require.resolve("../app/" + aid + "/blue/agentserver_router.js")];
+            if (require.cache[require.resolve("../app/" + aid + "/blue/agentserver_handlers.js")]){
+              console.log('yes')
+              delete require.cache[require.resolve("../app/" + aid + "/blue/agentserver_handlers.js")];
+            }
+            if (require.cache[require.resolve("../app/" + aid + "/blue/agentserver_request.js")]){
+              console.log('yes')
+              delete require.cache[require.resolve("../app/" + aid + "/blue/agentserver_request.js")];
+            }
+            if (require.cache[require.resolve("../app/" + aid + "/blue/main.js")]){
+              console.log('yes')
+              delete require.cache[require.resolve("../app/" + aid + "/blue/main.js")];
+            }
+            if (require.cache[require.resolve("../app/" + aid + "/blue/agent.js")]){
+              console.log('yes')
+              delete require.cache[require.resolve("../app/" + aid + "/blue/agent.js")];
+            }
+            if (require.cache[require.resolve("../app/" + aid + "/blue/impactServices.js")]){
+              console.log('yes')
+              delete require.cache[require.resolve("../app/" + aid + "/blue/impactServices.js")];
+            }
+          }
+        } catch(e){
+          console.log(e.toString());
+        }
+
+        if(appDescr.status == "crashed" || appDescr.firstStartAfterCrash) {
+          delete allInstances[aid][env];
+          delete apps[aid][env];
+          /*if(env == "blue"){
+            delete apps[aid];
+          }*/
+          //apps.splice(apps.indexOf(appDescr), 1);
+          callback(null);
+        } else {
+          console.log("Second Step");
+          //startOrStopInstance({status: "paused"}, aid, env, function(err){
+          //  if(err){
+          //    callback(err);
+          //  } else {
+          //    console.log("Third Step");
+              allInstances[aid][env].server.close();
+              delete allInstances[aid][env];
+              delete reservedPorts[ports[aid][env]];
+              delete apps[aid][env];
+              callback(null);
+          //  }
+          //});
+        }
+      //}
+    //});
+
+    //});
+
   }
 
   function deleteApp(aid, appDescr, environment, callback){
