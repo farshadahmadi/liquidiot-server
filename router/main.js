@@ -508,11 +508,12 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       callback(new Error('There is no previous deployed version to rollback or the previous version is crashed'));
     } else {
 
-      startOrStopInstance({status: "paused"}, aid, env.blue, function(err, blueAppStatus){
-        if(err){
+      stopApp(aid, env.blue);
+      //startOrStopInstance({status: "paused"}, aid, env.blue, function(err, blueAppStatus){
+      //  if(err){
           //res.status(500).send(err.toString());
-          callback(err);
-        } else {
+      //    callback(err);
+      //  } else {
           /*console.log("result of stop status: " + blueAppStatus);
           blueAppDescr.status = blueAppStatus;
           console.log("bbbbbbbbbbbbbbbbbbb:" + JSON.stringify(blueAppDescr));
@@ -531,11 +532,27 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             });
           } else {*/
         deleteAllSubscriptions(aid, 'blue')
-          .then(function(response){ 
+          .then(function(response){
 
-            blueAppDescr.status = blueAppStatus;
+            //blueAppDescr.status = blueAppStatus;
             var greenAppDescr = appDescr.green;
-            if(greenAppDescr.firstStartAfterCrash){
+
+            instanciate(greenAppDescr, env.green, function(err, greenAppStatus, deploymentErr){
+              if(err){
+                callback(err);
+              } else {
+                greenAppDescr.canRollback = false;
+                exchangeBlueGreen(aid, function(err){
+                  if(err){
+                    callback(err);
+                  } else {
+                    callback(null, greenAppDescr);
+                  }
+                });
+              }
+            });
+
+            /*if(greenAppDescr.firstStartAfterCrash){
               delete greenAppDescr.firstStartAfterCrash;
               greenAppDescr.status = "installed";
               instanciate(greenAppDescr, env.green, function(err, greenAppStatus, deploymentErr){
@@ -574,12 +591,12 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                   });
                 }
               });
-            }
+            }*/
 
           });
 
-        }
-      });
+        //}
+      //});
     }
     //var greenAppDescr = appDescr.green;
   }
@@ -735,7 +752,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
                         console.log("gggggggggggggg:" + JSON.stringify(greenAppDescr));
                         
-                        exchangeBlueGreen(aid, blueAppStatus, function(err){
+                        exchangeBlueGreen(aid, function(err){
                           if(err){
                             callback(err);
                           } else {
@@ -855,7 +872,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     delete reservedPorts[ports[aid][env]];
   }
 
-  function exchangeBlueGreen(aid, blueAppDescr, callback){
+  function exchangeBlueGreen(aid, callback){
     var env = {blue: "blue", green: "green"};
     var blueAppDir = "./app/" + aid + "/" + env.blue;
     var greenAppDir = "./app/" + aid + "/" + env.green;
