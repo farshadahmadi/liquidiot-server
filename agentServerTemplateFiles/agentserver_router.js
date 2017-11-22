@@ -2,7 +2,7 @@
 
 //module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo, impact){
 
-  var impact = {};
+  //var impact = {};
   var emitter = {};
   //var impactEvents = {};
   
@@ -23,13 +23,13 @@
 
   process.on('cleanup', function(){
     console.log('Do cleanup here');
-    impact.services.deleteAllSubscriptions()
+    /*impact.services.deleteAllSubscriptions()
           .then(function(res){
             console.log(res);
           })
           .catch(function(err){
             console.log(err);
-          });
+          });*/
   });
 
   // do app specific cleaning before exiting
@@ -43,8 +43,8 @@
     process.exit(2);
   });
 
-  var EventEmitter = require('events').EventEmitter;
-  impact.event = new EventEmitter();
+  //var EventEmitter = require('events').EventEmitter;
+  //impact.event = new EventEmitter();
 
   var fs = require("fs");
   var util = require("util");
@@ -95,7 +95,8 @@
 
     var $request = require("./agentserver_request")(RRUrl, appDescr.id, deviceInfo);
     
-    require("./impactServices")(RRUrl, appDescr.id, deviceInfo, impact);
+    //require("./impactServices")(RRUrl, appDescr.id, deviceInfo, impact);
+    var impact = require("./impactServices")(appDescr.id, deviceInfo);
 
     require("./agent")(iotApp, emitter);
     

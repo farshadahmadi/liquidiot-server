@@ -1076,7 +1076,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     //app1.$emitter = emitter;
 
     impacts[aid] = impacts[aid] || {};
-    impacts[aid][env] = {};
+    //impacts[aid][env] = {};
+    impacts[aid][env] = require('../agentServerTemplateFiles/impactServices.js')(aid, deviceInfo);
     
     allInstances[aid] = allInstances[aid] || {};
     //allInstances[aid][env] = app1;
@@ -1163,33 +1164,32 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       } else {
         var blueAppDescr = appDescr.blue;
 
-        //deleteAllSubscriptions(aid, 'blue')
-        //  .then(function(response){
-        //    console.log(response);
+        deleteAllSubscriptions(aid, 'blue')
+          .then(function(response){
+            console.log(response);
 
-        deleteApp(aid, appDescr, env.blue, function(err){
-          if(err){
-            res.status(500).send(err.toString());
-          } else {
-            console.log("blue app description: " + blueAppDescr);
-            dm.removeAppInfo(blueAppDescr, function(err, response){
+            deleteApp(aid, appDescr, env.blue, function(err){
               if(err){
-                console.log(err.toString());
+                res.status(500).send(err.toString());
               } else {
-                console.log("RAMOVE from dm response: " + response);
+                console.log("blue app description: " + blueAppDescr);
+                dm.removeAppInfo(blueAppDescr, function(err, response){
+                  if(err){
+                    console.log(err.toString());
+                  } else {
+                    console.log("RAMOVE from dm response: " + response);
+                  }
+                  //try {
+                    fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8");
+                  //} catch(err){console.log(err);}
+                  //console.log('before error???');
+                  res.status(200).send("App is deleted.");
+                });
               }
-              //try {
-                fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8");
-              //} catch(err){console.log(err);}
-              //console.log('before error???');
-              res.status(200).send("App is deleted.");
             });
-          }
-        });
-
-        //  });
-      }
-    });
+      });
+    }
+  });
 
 
  /*       var greenAppDescr = appDescr.green;
@@ -1344,6 +1344,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
               delete allInstances[aid][env];
               delete reservedPorts[ports[aid][env]];
               delete apps[aid][env];
+              delete impacts[aid][env];
               callback(null);
           //  }
           //});
