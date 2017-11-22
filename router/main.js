@@ -29,13 +29,20 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   var errParser = require('stacktrace-parser');
   var fsExtra = require('fs-extra');
 
-  var reservedPorts = [];
-  var allInstances = [];
+  //var reservedPorts = [];
+  var reservedPorts = {};
+
+  //var allInstances = [];
+  var allInstances = {};
+
   //var apps = [];
   var apps = {};
-  var ports = [];
 
-  var impacts = [];
+  //var ports = [];
+  var ports = {};
+
+  //var impacts = [];
+  var impacts = {};
 
   var templatesDir = "./agentServerTemplateFiles/";
 
@@ -434,6 +441,13 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   }
 
   app.get("/app", function(req, res) {
+
+    console.log(apps);
+    console.log(impacts);
+    console.log(ports);
+    console.log(reservedPorts);
+    console.log(allInstances);
+
     var resString = JSON.stringify(apps);
     res.status(200).send(resString);
   });
@@ -1291,6 +1305,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             console.log("Blue is deleted");
             console.log("Fourth Step");
             delete apps[aid];
+            delete impacts[aid];
+            delete allInstances[aid];
+            delete ports[aid];
             callback(null);
           }
         }
@@ -1345,6 +1362,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
               delete reservedPorts[ports[aid][env]];
               delete apps[aid][env];
               delete impacts[aid][env];
+              delete ports[aid][env];
               callback(null);
           //  }
           //});
