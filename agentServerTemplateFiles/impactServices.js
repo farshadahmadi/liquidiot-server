@@ -1,7 +1,7 @@
 
 "use stricts"
 
-module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
+module.exports  = function(appId, deviceInfo){
 
   var requestP = require("request-promise");
 
@@ -17,7 +17,11 @@ module.exports  = function(deviceManagerUrl, appId, deviceInfo, impact){
   }
   CustomError.prototype = new Error();
   
+  var impact = {};
   impact.services = {};
+
+  var EventEmitter = require('events').EventEmitter;
+  impact.event = new EventEmitter();
   /*var impact = {
     services: {}
   };*/

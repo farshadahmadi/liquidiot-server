@@ -29,13 +29,20 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   var errParser = require('stacktrace-parser');
   var fsExtra = require('fs-extra');
 
-  var reservedPorts = [];
-  var allInstances = [];
+  //var reservedPorts = [];
+  var reservedPorts = {};
+
+  //var allInstances = [];
+  var allInstances = {};
+
   //var apps = [];
   var apps = {};
-  var ports = [];
 
-  var impacts = [];
+  //var ports = [];
+  var ports = {};
+
+  //var impacts = [];
+  var impacts = {};
 
   var templatesDir = "./agentServerTemplateFiles/";
 
@@ -434,6 +441,13 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   }
 
   app.get("/app", function(req, res) {
+
+    console.log(apps);
+    console.log(impacts);
+    console.log(ports);
+    console.log(reservedPorts);
+    console.log(allInstances);
+
     var resString = JSON.stringify(apps);
     res.status(200).send(resString);
   });
@@ -494,11 +508,12 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       callback(new Error('There is no previous deployed version to rollback or the previous version is crashed'));
     } else {
 
-      startOrStopInstance({status: "paused"}, aid, env.blue, function(err, blueAppStatus){
-        if(err){
+      stopApp(aid, env.blue);
+      //startOrStopInstance({status: "paused"}, aid, env.blue, function(err, blueAppStatus){
+      //  if(err){
           //res.status(500).send(err.toString());
-          callback(err);
-        } else {
+      //    callback(err);
+      //  } else {
           /*console.log("result of stop status: " + blueAppStatus);
           blueAppDescr.status = blueAppStatus;
           console.log("bbbbbbbbbbbbbbbbbbb:" + JSON.stringify(blueAppDescr));
@@ -517,11 +532,27 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             });
           } else {*/
         deleteAllSubscriptions(aid, 'blue')
-          .then(function(response){ 
+          .then(function(response){
 
-            blueAppDescr.status = blueAppStatus;
+            //blueAppDescr.status = blueAppStatus;
             var greenAppDescr = appDescr.green;
-            if(greenAppDescr.firstStartAfterCrash){
+
+            instanciate(greenAppDescr, env.green, function(err, greenAppStatus, deploymentErr){
+              if(err){
+                callback(err);
+              } else {
+                greenAppDescr.canRollback = false;
+                exchangeBlueGreen(aid, function(err){
+                  if(err){
+                    callback(err);
+                  } else {
+                    callback(null, greenAppDescr);
+                  }
+                });
+              }
+            });
+
+            /*if(greenAppDescr.firstStartAfterCrash){
               delete greenAppDescr.firstStartAfterCrash;
               greenAppDescr.status = "installed";
               instanciate(greenAppDescr, env.green, function(err, greenAppStatus, deploymentErr){
@@ -560,12 +591,12 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                   });
                 }
               });
-            }
+            }*/
 
           });
 
-        }
-      });
+        //}
+      //});
     }
     //var greenAppDescr = appDescr.green;
   }
@@ -665,7 +696,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       if(err){
         callback(err);
       } else {
-        console.log("allinstances: " + JSON.stringify(allInstances[aid]));
+        //console.log("allinstances: " + JSON.stringify(allInstances[aid]));
         console.log("apps: " + JSON.stringify(apps[aid]));
         console.log("ports: " + JSON.stringify(ports[aid]));
         console.log("appDescr: " + JSON.stringify(appDescr));
@@ -673,19 +704,21 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
         console.log("Third blue app description: " + JSON.stringify(appDescr.blue));
         console.log("Third blue app description: " + JSON.stringify(blueAppDescr));
 
+        stopApp(aid, env.blue);
         //if(!blueAppDescr.firstStartAfterCrash){
-          startOrStopInstance({status: "paused"}, aid, env.blue, function(err, blueAppStatus){
-            if(err){
+          //startOrStopInstance({status: "paused"}, aid, env.blue, function(err, blueAppStatus){
+          //  if(err){
               //res.status(500).send(err.toString());
-              callback(err);
-            } else {
-              console.log("result of stop status: " + blueAppStatus);
-              blueAppDescr.status = blueAppStatus;
-              console.log("bbbbbbbbbbbbbbbbbbb:" + JSON.stringify(blueAppDescr));
-              
+          //    callback(err);
+          //  } else {
+              //console.log("result of stop status: " + blueAppStatus);
+              //blueAppDescr.status = blueAppStatus;
+              //console.log("bbbbbbbbbbbbbbbbbbb:" + JSON.stringify(blueAppDescr));
+              var blueAppStatus = blueAppDescr.status; 
               installApp_P(req, aid, env.green).then(function(greenAppDescr){
                   greenAppDescr.id = aid;
-                  greenAppDescr.status = "installed";
+                  greenAppDescr.status = "running";
+                  //greenAppDescr.status = "installed";
                   apps[aid][env.green] = greenAppDescr;
                   
                   if(blueAppStatus == "crashed"){
@@ -703,14 +736,14 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                     fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8"); //
                  
                     // delete all subscriptions the app created to impact before instanciating a blue app
-                    deleteAllSubscriptions(aid, "blue")
+                    deleteAllSubscriptions(aid, env.blue)
                       .then(function(response){ 
  
                     instanciate(greenAppDescr, env.green, function(err, greenAppStatus, deploymentErr){
                       if(err) {
                         callback(err);
                       } else {
-                        greenAppDescr.status = greenAppStatus;
+                        //greenAppDescr.status = greenAppStatus;
                         /*if(blueAppStatus == "crashed"){
                           greenAppDescr.canRollback = false;
                         } else {
@@ -719,7 +752,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
                         console.log("gggggggggggggg:" + JSON.stringify(greenAppDescr));
                         
-                        exchangeBlueGreen(aid, blueAppStatus, function(err){
+                        exchangeBlueGreen(aid, function(err){
                           if(err){
                             callback(err);
                           } else {
@@ -733,8 +766,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
               }).catch(function(err){
                 callback(err);
               });
-            }
-          });
+            //}
+          //});
         /*} else {
           installApp(req, aid, env.green, function(err, greenAppDescr){
             if(err) {
@@ -833,7 +866,13 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     });
   }*/
 
-  function exchangeBlueGreen(aid, blueAppDescr, callback){
+  function stopApp(aid, env){
+    //var aid = appDescr.id;
+    allInstances[aid][env].kill();
+    delete reservedPorts[ports[aid][env]];
+  }
+
+  function exchangeBlueGreen(aid, callback){
     var env = {blue: "blue", green: "green"};
     var blueAppDir = "./app/" + aid + "/" + env.blue;
     var greenAppDir = "./app/" + aid + "/" + env.green;
@@ -974,7 +1013,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     });
   }
     
-  process.on("uncaughtException", function(error){
+  /*process.on("uncaughtException", function(error){
     //var env = "blue";
     console.log("One Error is thrown."); 
     var appErr = errParser.parse(error.stack);
@@ -1004,15 +1043,16 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             var env = (appInBlue != -1) ? "blue" : "green";
             var appDescr = appDescription[env];
 
-            /*if(appDescr.status == "installed"){
-              fs.appendFileSync(appDir1 + "debug.log", error.stack + "\n", "utf8");
-              console.log("aid from installed: " + idOfApp);
-              appDescr.status = "crashed";
-              allInstances[idOfApp][env].server.close();
-              //delete allInstances[idOfApp][env];
-              delete reservedPorts[ports[idOfApp][env]];
-              callbacks[idOfApp](null, "crashed", err);
-            } else*/ if(appDescr.status == "running") {
+            //if(appDescr.status == "installed"){
+            //  fs.appendFileSync(appDir1 + "debug.log", error.stack + "\n", "utf8");
+            //  console.log("aid from installed: " + idOfApp);
+            //  appDescr.status = "crashed";
+            //  allInstances[idOfApp][env].server.close();
+            //  //delete allInstances[idOfApp][env];
+            //  delete reservedPorts[ports[idOfApp][env]];
+            //  callbacks[idOfApp](null, "crashed", err);
+            //} else 
+            if(appDescr.status == "running") {
 
               console.log(new Date().getTime());
 
@@ -1048,7 +1088,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       console.log("Error not regarding apps is thrown:");
       throw error;
     }
-  });
+  });*/
 
   // This array will store callbacks sent to createAppServer function.
   // The callbacks will be used when error thrown to process.on("uncaughtException")
@@ -1076,7 +1116,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     //app1.$emitter = emitter;
 
     impacts[aid] = impacts[aid] || {};
-    impacts[aid][env] = {};
+    //impacts[aid][env] = {};
+    impacts[aid][env] = require('../agentServerTemplateFiles/impactServices.js')(aid, deviceInfo);
     
     allInstances[aid] = allInstances[aid] || {};
     //allInstances[aid][env] = app1;
@@ -1163,33 +1204,32 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       } else {
         var blueAppDescr = appDescr.blue;
 
-        //deleteAllSubscriptions(aid, 'blue')
-        //  .then(function(response){
-        //    console.log(response);
+        deleteAllSubscriptions(aid, 'blue')
+          .then(function(response){
+            console.log(response);
 
-        deleteApp(aid, appDescr, env.blue, function(err){
-          if(err){
-            res.status(500).send(err.toString());
-          } else {
-            console.log("blue app description: " + blueAppDescr);
-            dm.removeAppInfo(blueAppDescr, function(err, response){
+            deleteApp(aid, appDescr, env.blue, function(err){
               if(err){
-                console.log(err.toString());
+                res.status(500).send(err.toString());
               } else {
-                console.log("RAMOVE from dm response: " + response);
+                console.log("blue app description: " + blueAppDescr);
+                dm.removeAppInfo(blueAppDescr, function(err, response){
+                  if(err){
+                    console.log(err.toString());
+                  } else {
+                    console.log("RAMOVE from dm response: " + response);
+                  }
+                  //try {
+                    fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8");
+                  //} catch(err){console.log(err);}
+                  //console.log('before error???');
+                  res.status(200).send("App is deleted.");
+                });
               }
-              //try {
-                fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8");
-              //} catch(err){console.log(err);}
-              //console.log('before error???');
-              res.status(200).send("App is deleted.");
             });
-          }
-        });
-
-        //  });
-      }
-    });
+      });
+    }
+  });
 
 
  /*       var greenAppDescr = appDescr.green;
@@ -1284,6 +1324,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                 callback(err);
               } else {
                 delete apps[aid];
+                delete impacts[aid];
+                delete allInstances[aid];
+                delete ports[aid];
                 callback(null);
               }
             });
@@ -1291,6 +1334,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
             console.log("Blue is deleted");
             console.log("Fourth Step");
             delete apps[aid];
+            delete impacts[aid];
+            delete allInstances[aid];
+            delete ports[aid];
             callback(null);
           }
         }
@@ -1344,6 +1390,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
               delete allInstances[aid][env];
               delete reservedPorts[ports[aid][env]];
               delete apps[aid][env];
+              delete impacts[aid][env];
+              delete ports[aid][env];
               callback(null);
           //  }
           //});
