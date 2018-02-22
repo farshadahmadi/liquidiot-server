@@ -222,6 +222,11 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     spawn("shutdown", ["now"]);
     spawn("sudo", ["shutdown", "now"]);
   });
+  
+  // This method is called when a sequential liquid transfer should be initiated.
+  app.post("/transfer", function(req, res){
+    console.log(req);
+  });
 
   // This method is called for deployment of application. The application should be packed
   // in tarball in .tgz format.
