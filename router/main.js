@@ -141,8 +141,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
   });
 
-  //var bodyParser = require('body-parser');
-  //app.use(bodyParser.json());
+  var bodyParser = require('body-parser');
+  app.use(bodyParser.json());
 
   app.use("/app/:aid/api", function(req, res){
 
@@ -225,7 +225,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   
   // This method is called when a sequential liquid transfer should be initiated.
   app.post("/transfer", function(req, res){
-    console.log(req);
+    console.log(req.body);
+    res.send(true);
+    return true;
   });
 
   // This method is called for deployment of application. The application should be packed
