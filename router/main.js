@@ -1518,6 +1518,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 	    return npmPackPromise(path.resolve(__dirname,targetDir));
 	  }).then(function(pkgFilename){
 	    console.log("File packed.");
+	    console.log(path.resolve(__dirname,pkgFilename) + " --- " + pkgFilename);
 	    return fsp.readFileAsync(path.resolve(__dirname,pkgFilename));
 	  }).then(function(pkgBuffer){
 	    console.log("Sending package");
