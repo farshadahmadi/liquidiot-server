@@ -25,6 +25,13 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   var dm = require("./dm")(deviceManagerUrl, deviceInfo);
   var errParser = require('stacktrace-parser');
   var fsExtra = require('fs-extra');
+  var rp = require('request-promise');
+  var npm = require('npm');
+  var fsp = require('fs-extra-promise');
+  var _ = require('lodash');
+  var tmp = require('tmp');
+  var rimraf = require('rimraf');
+  var mkdirp = require('mkdirp');
 
   var reservedPorts = [];
   var allInstances = [];
@@ -221,13 +228,6 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   app.delete("/", function(req, res){
     spawn("shutdown", ["now"]);
     spawn("sudo", ["shutdown", "now"]);
-  });
-  
-  // This method is called when a sequential liquid transfer should be initiated.
-  app.post("/transfer", function(req, res){
-    console.log(req.body);
-    res.send(true);
-    return true;
   });
 
   // This method is called for deployment of application. The application should be packed
@@ -1463,10 +1463,145 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
           }
         //}
   }
+  
+  // This method is called when a sequential liquid transfer should be initiated.
+  app.post("/transfer", function(req, res1){
+    
+    console.log(req.body);
+    
+    var url = "http://localhost:" + ports[req.body.id]["blue"] + "/api/savestate/"; // URL of the application that should be transferred.
+    
+    request.get(url, function(err, res2, body){
+      if(err) {
+          console.log(err);
+	  res1.send(false);
+      } else if(res1.statusCode == 200){
+          if(body=="true"){
+	    // Everything ok, proceed.
+	    console.log("Packing tarball...");
+	    copyNecesarryFiles(req.body.id, req.body.url+"/app");
+	    res1.send(true);
+	  } else{
+	    res1.send(false);
+	  }
+      } else {
+          console.log(res2.statuscode);
+	  res1.send(false);
+      }
+    });
+    
+  });
 
 ///////////////////////////////////////////////////////////////////
 //////// Specific Instance Related Functions - END ////////////////
 ///////////////////////////////////////////////////////////////////
-
+  
+///////////////////////////////////////////////////////////////////
+///////// Liquid Transfer Related Functions  - START //////////////
+///////////////////////////////////////////////////////////////////
+  
+  function copyNecesarryFiles(aid, url){
+    var appDir = "../app/" + aid + "/blue/";
+    var targetDir = "../liquid";
+    
+    console.log(path.resolve(__dirname,targetDir));
+    rimraf(path.resolve(__dirname,targetDir), function(){
+      mkdirp(path.resolve(__dirname,targetDir),function(err){
+	if(err) console.log(err);
+	else{
+	  var files = ["/agent.js","/liquidiot.json","/main.js","/package.json","/state.json"];
+	  return Promise.all(files.map(function (file){
+	    console.log("Copying file.");
+	    return copyFile((path.resolve(__dirname,appDir)+file),(path.resolve(__dirname,targetDir)+file),function(){});
+	  })).then(function(promise){
+	    console.log("Packing promsie.");
+	    return npmPackPromise(path.resolve(__dirname,targetDir));
+	  }).then(function(pkgFilename){
+	    console.log("File packed.");
+	    return fsp.readFileAsync(path.resolve(__dirname,pkgFilename));
+	  }).then(function(pkgBuffer){
+	    console.log("Sending package");
+	    return sendPackage(pkgBuffer,url);
+	  }).then(function(){
+	    console.log("Package sent.");
+	  })
+	  .catch(function(){
+	    console.log("Error.");
+	  });
+	}
+      });
+    });
+  }
+  
+  function copyFile(source, target, callback){
+    var read = fs.createReadStream(source);
+    read.on("error", function(err){
+      console.log("Error reading file.");
+      return err;
+    });
+    var write = fs.createWriteStream(target);
+    write.on("error", function(err){
+      console.log("Error writing to file.");
+      return err;
+    });
+    write.on("close", function(ex){
+      callback();
+    });
+    read.pipe(write);
+    return true;
+  }
+  
+  // https://github.com/npm/npm/issues/4074
+  function npmPackPromise(dir) {
+    return new Promise(function(resolve, reject) {
+      npm.load({}, function(err) {
+	if (err) {
+	  console.log("Error on load.")
+	  return reject(err);
+	}
+	console.log("Loaded");
+	console.log(npm.commands.cache);
+	npm.commands.cache.add(dir, null, false, null, function(err, data) {
+	  console.log("Cached.");
+	  if (err) {
+	    console.log("Error.");
+	    return reject(err);
+	  }
+	  var cached;
+	  cached = function(){
+	    console.log("Packaged tarball.");
+	    path.resolve(npm.cache, data.name, data.version, "package.tgz");
+	  }
+	  resolve(cached);
+	});
+	/*npm.commands.pack([dir],function(er,data){
+	  if(er){
+	    console.log("Error on pack.");
+	    return reject(er);
+	  }
+	  console.log(data);
+	  return data;
+	});*/
+      });
+    });
+  }
+  
+  function sendPackage(pkgBuffer, url) {
+  var formData = {
+    'filekey': {
+      value: pkgBuffer,
+      options: {
+        filename: 'package.tgz',
+        knownLength: pkgBuffer.length,
+      }
+    }
+  };
+  return rp.post({url: url, formData: formData, timeout: 5000});
+}
+  
+///////////////////////////////////////////////////////////////////
+///////// Liquid Transfer Related Functions  - END ////////////////
+///////////////////////////////////////////////////////////////////
+  
 }
 

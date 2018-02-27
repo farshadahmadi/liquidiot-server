@@ -14,6 +14,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
   var log_file = fs.createWriteStream(cwd + "debug.log", {flags : "a"});
 
   var logger = {};
+  var exclude_var_array = ["$task","$initialize","$terminate","$configureInterval","start","stop"]; //Exclude from liquid savefile.
 
   logger.log = function(d){
     console.log(d);
@@ -66,6 +67,31 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
       res.status(200).send("hello dispatcher!");
     });
     
+    $router.get("/savestate/", function(req, res){
+      // SAVE THE VARIABLE
+      
+      var fs = require('fs');
+      var path = require('path');
+      
+      // Compose the JSON-file.
+      var state = "{";
+      for(var key in iotApp){
+	if(exclude_var_array.indexOf(key+"")==-1){
+	  state+=('"'+key+'":"'+iotApp[key]+'",');
+	}
+      }
+      state=state.substring(0,state.length-1);
+      state+="}";
+      
+      
+      fs.writeFile(path.resolve(__dirname, 'state.json'),state,function(err){
+	if(err){
+	  console.log(err);
+	}
+	res.status(200).send("true");
+      });
+    });
+    
     exApp.use("/api", $router);
 
     require("./agentserver_handlers")(exApp, exAppServer, iotApp, emitter);
@@ -73,4 +99,3 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
   });
 
 }
-
