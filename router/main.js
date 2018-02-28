@@ -1516,7 +1516,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 	    console.log("Copying file.");
 	    return copyFile((path.resolve(__dirname,appDir)+file),(path.resolve(__dirname,targetDir)+file),function(){});
 	  })).then(function(promise){
-	    return copyResources((path.resolve(__dirname,appDir)+"/resources"),(path.resolve(__dirname,targetDir)+"/resources");
+	    return copyResources((path.resolve(__dirname,appDir)+"/resources"),(path.resolve(__dirname,targetDir)+"/resources"));
 	  }).then(function(){
 	    // Pack the tarball.
 	    console.log("Packing promsie.");
