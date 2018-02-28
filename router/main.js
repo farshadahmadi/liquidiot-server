@@ -1516,6 +1516,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 	    console.log("Copying file.");
 	    return copyFile((path.resolve(__dirname,appDir)+file),(path.resolve(__dirname,targetDir)+file),function(){});
 	  })).then(function(promise){
+	    return copyResources((path.resolve(__dirname,appDir)+"/resources"),(path.resolve(__dirname,targetDir)+"/resources");
+	  }).then(function(){
 	    // Pack the tarball.
 	    console.log("Packing promsie.");
 	    return npmPackPromise(path.resolve(__dirname,targetDir));
@@ -1559,6 +1561,15 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     });
     read.pipe(write);
     return true;
+  }
+  
+  // Copy the resources folder.
+  function copyResources(source, target){
+    return fsExtra.copy(source, target, function(err){
+      if(err){
+	console.log("No resources folder.");
+      }
+    });
   }
   
   // Pack a tarball.
