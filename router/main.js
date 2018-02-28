@@ -1518,7 +1518,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 	    return npmPackPromise(path.resolve(__dirname,targetDir));
 	  }).then(function(pkgFilename){
 	    console.log("File packed.");
-	    console.log(path.resolve(__dirname,pkgFilename) + " --- " + pkgFilename);
+	    console.log("Package file name --- " + pkgFilename);
 	    return fsp.readFileAsync(path.resolve(__dirname,pkgFilename));
 	  }).then(function(pkgBuffer){
 	    console.log("Sending package");
@@ -1569,10 +1569,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 	    return reject(err);
 	  }
 	  var cached;
-	  cached = function(){
-	    console.log("Packaged tarball.");
-	    path.resolve(npm.cache, data.name, data.version, "package.tgz");
-	  }
+	  cached = path.resolve(npm.cache, data.name, data.version, "package.tgz");
 	  resolve(cached);
 	});
 	/*npm.commands.pack([dir],function(er,data){
