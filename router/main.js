@@ -1467,10 +1467,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   // This method is called when a sequential liquid transfer should be initiated.
   app.post("/transfer", function(req, res1){
     
-    console.log(req.body);
-    
     var url = "http://localhost:" + ports[req.body.id]["blue"] + "/api/savestate/"; // URL of the application that should be transferred.
     
+    // Create a savefile at the application.
     request.get(url, function(err, res2, body){
       if(err) {
           console.log(err);
@@ -1479,7 +1478,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
           if(body=="true"){
 	    // Everything ok, proceed.
 	    console.log("Packing tarball...");
-	    copyNecesarryFiles(req.body.id, req.body.url+"/app");
+	    doTransfer(req.body.id, req.body.url+"/app");
 	    res1.send(true);
 	  } else{
 	    res1.send(false);
@@ -1500,28 +1499,32 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 ///////// Liquid Transfer Related Functions  - START //////////////
 ///////////////////////////////////////////////////////////////////
   
-  function copyNecesarryFiles(aid, url){
+  // Do the liquid transfer.
+  function doTransfer(aid, url){
     var appDir = "../app/" + aid + "/blue/";
     var targetDir = "../liquid";
     
-    console.log(path.resolve(__dirname,targetDir));
+    // Empty the folder in which the transferrable files will be packed.
     rimraf(path.resolve(__dirname,targetDir), function(){
       mkdirp(path.resolve(__dirname,targetDir),function(err){
 	if(err) console.log(err);
 	else{
-	  var files = ["/agent.js","/liquidiot.json","/main.js","/package.json","/state.json"];
+	  var files = ["/agent.js","/liquidiot.json","/main.js","/package.json","/state.json"]; // The files that should be transferred.
+	  // Copy all files into the correct directory.
 	  return Promise.all(files.map(function (file){
 	    console.log("Copying file.");
 	    return copyFile((path.resolve(__dirname,appDir)+file),(path.resolve(__dirname,targetDir)+file),function(){});
 	  })).then(function(promise){
+	    // Pack the tarball.
 	    console.log("Packing promsie.");
 	    return npmPackPromise(path.resolve(__dirname,targetDir));
 	  }).then(function(pkgFilename){
 	    console.log("File packed.");
-	    console.log("Package file name --- " + pkgFilename);
+	    // Read the tarball.
 	    return fsp.readFileAsync(path.resolve(__dirname,pkgFilename));
 	  }).then(function(pkgBuffer){
 	    console.log("Sending package");
+	    // Send the tarball.
 	    return sendPackage(pkgBuffer,url);
 	  }).then(function(){
 	    console.log("Package sent.");
@@ -1534,6 +1537,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     });
   }
   
+  // Copy a file.
   function copyFile(source, target, callback){
     var read = fs.createReadStream(source);
     read.on("error", function(err){
@@ -1552,6 +1556,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     return true;
   }
   
+  // Pack a tarball.
   // https://github.com/npm/npm/issues/4074
   function npmPackPromise(dir) {
     return new Promise(function(resolve, reject) {
@@ -1565,25 +1570,18 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 	npm.commands.cache.add(dir, null, false, null, function(err, data) {
 	  console.log("Cached.");
 	  if (err) {
-	    console.log("Error.");
+	    console.log("Error on cache.");
 	    return reject(err);
 	  }
 	  var cached;
 	  cached = path.resolve(npm.cache, data.name, data.version, "package.tgz");
 	  resolve(cached);
 	});
-	/*npm.commands.pack([dir],function(er,data){
-	  if(er){
-	    console.log("Error on pack.");
-	    return reject(er);
-	  }
-	  console.log(data);
-	  return data;
-	});*/
       });
     });
   }
   
+  // Send a tarball.
   function sendPackage(pkgBuffer, url) {
   var formData = {
     'filekey': {
