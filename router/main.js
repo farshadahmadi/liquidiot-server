@@ -1467,6 +1467,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   // This method is called when a sequential liquid transfer should be initiated.
   app.post("/transfer", function(req, res1){
     
+    console.log(req.body.url);
+    
     var url = "http://localhost:" + ports[req.body.id]["blue"] + "/api/savestate/"; // URL of the application that should be transferred.
     
     // Create a savefile at the application.
@@ -1478,7 +1480,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
           if(body=="true"){
 	    // Everything ok, proceed.
 	    console.log("Packing tarball...");
-	    doTransfer(req.body.id, req.body.url+"/app");
+	    doTransfer(req.body.id, req.body.url);
 	    res1.send(true);
 	  } else{
 	    res1.send(false);
@@ -1582,7 +1584,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   }
   
   // Send a tarball.
-  function sendPackage(pkgBuffer, url) {
+  function sendPackage(pkgBuffer, urls) {
   var formData = {
     'filekey': {
       value: pkgBuffer,
@@ -1592,7 +1594,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       }
     }
   };
-  return rp.post({url: url, formData: formData, timeout: 5000});
+  Promise.all(urls.map(function(url){
+    return rp.post({url: url+"/app", formData: formData, timeout: 5000});
+  }));
 }
   
 ///////////////////////////////////////////////////////////////////
