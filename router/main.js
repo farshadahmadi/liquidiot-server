@@ -1480,13 +1480,12 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
           if(body=="true"){
 	    // Everything ok, proceed.
 	    console.log("Packing tarball...");
-	    doTransfer(req.body.id, req.body.url).then(function(ok){
+	    var ok = doTransfer(req.body.id, req.body.url)
 	      if(ok == true){
 		res1.send(true);
 	      }else{
 		res1.send(false);
 	      }
-	    });
 	    
 	  } else{
 	    res1.send(false);
