@@ -1480,8 +1480,14 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
           if(body=="true"){
 	    // Everything ok, proceed.
 	    console.log("Packing tarball...");
-	    doTransfer(req.body.id, req.body.url);
-	    res1.send(true);
+	    doTransfer(req.body.id, req.body.url).then(function(ok){
+	      if(ok == true){
+		res1.send(true);
+	      }else{
+		res1.send(false);
+	      }
+	    });
+	    
 	  } else{
 	    res1.send(false);
 	  }
@@ -1530,9 +1536,11 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 	    return sendPackage(pkgBuffer,url);
 	  }).then(function(){
 	    console.log("Package sent.");
+	    return true;
 	  })
 	  .catch(function(){
 	    console.log("Error.");
+	    return false;
 	  });
 	}
       });
