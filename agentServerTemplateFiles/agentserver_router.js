@@ -77,7 +77,11 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
       var state = "{";
       for(var key in iotApp){
 	if(exclude_var_array.indexOf(key+"")==-1){
-	  state+=('"'+key+'":"'+iotApp[key]+'",');
+	  if(typeof iotApp[key] == 'string' || iotApp[key] instanceof String){
+	    state+=('"'+key+'":"'+iotApp[key]+'",');
+	  }else{
+	    state+=('"'+key+'":'+iotApp[key]+',');
+	  }
 	}
       }
       state=state.substring(0,state.length-1);
