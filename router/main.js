@@ -1480,13 +1480,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
           if(body=="true"){
 	    // Everything ok, proceed.
 	    console.log("Packing tarball...");
-	    var ok = doTransfer(req.body.id, req.body.url)
-	      if(ok == true){
-		res1.send(true);
-	      }else{
-		res1.send(false);
-	      }
-	    
+	    doTransfer(req.body.id, req.body.url, res1);
 	  } else{
 	    res1.send(false);
 	  }
@@ -1507,7 +1501,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 ///////////////////////////////////////////////////////////////////
   
   // Do the liquid transfer.
-  function doTransfer(aid, url){
+  function doTransfer(aid, url, res){
     var appDir = "../app/" + aid + "/blue/";
     var targetDir = "../liquid";
     
@@ -1535,10 +1529,12 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 	    return sendPackage(pkgBuffer,url);
 	  }).then(function(){
 	    console.log("Package sent.");
+	    res.send(true);
 	    return true;
 	  })
 	  .catch(function(){
 	    console.log("Error.");
+	    res.send(false);
 	    return false;
 	  });
 	}
