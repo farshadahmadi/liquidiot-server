@@ -1,0 +1,15 @@
+1) First a normal app gets deployed. App1 is running.
+
+2a) Request for clone is issued. 
+    - ask RR for new syncID
+    - set the syncID for App1
+    - do normal fork
+
+2b) Request for clone is issued on an already cloned application.
+    - do normal fork
+
+3) When a change in state happends
+    - Request all apps from RR with same syncID
+    - Publish changes to all apps that were returned by the RR
+
+
