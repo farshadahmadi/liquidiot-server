@@ -1543,9 +1543,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 	      res.send(true);
 	      return true;
 	    } else{
-	      var succeed = initiateDelete(aid,null)
-	      res.send(succeed);
-	      return succeed;
+	      initiateDelete(aid,null)
+	      res.send(true);
+	      return true;
 	    }
 	  })
 	  .catch(function(){
