@@ -74,7 +74,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
       var path = require('path');
       
       // Compose the JSON-file.
-      var state = "{";
+      /*var state = "{";
       for(var key in iotApp){
 	if(exclude_var_array.indexOf(key+"")==-1){
 	  if(typeof iotApp[key] == 'string' || iotApp[key] instanceof String){
@@ -85,10 +85,15 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
 	}
       }
       state=state.substring(0,state.length-1);
-      state+="}";
+      state+="}";*/
+      
+      var state = {};
+      for(var key in iotApp){
+	state[key] = iotApp[key];
+      }
       
       
-      fs.writeFile(path.resolve(__dirname, 'state.json'),state,function(err){
+      fs.writeFile(path.resolve(__dirname, 'state.json'),JSON.stringify(state),function(err){
 	if(err){
 	  console.log(err);
 	}
