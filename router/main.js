@@ -1095,16 +1095,22 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   app.delete("/app/:aid", function(req, res){
 
     var aid = parseInt(req.params.aid);
+    
+    initiateDelete(aid, res);
+
+  });
+  
+  function initiateDelete(aid, res){
     var env = {blue: "blue", green: "green"};
 
     getAppDescr(aid, function(err, appDescr){
       if(err){
-        res.status(404).send(err.toString());
+        if(res!=null) res.status(404).send(err.toString());
       } else {
         var blueAppDescr = appDescr.blue;
         deleteApp(aid, appDescr, env.blue, function(err){
           if(err){
-            res.status(500).send(err.toString());
+            if(res!=null) res.status(500).send(err.toString());
           } else {
             console.log("blue app description: " + blueAppDescr);
             dm.removeAppInfo(blueAppDescr, function(err, response){
@@ -1114,13 +1120,15 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                 console.log("RAMOVE from dm response: " + response);
               }
               fs.writeFileSync("./device.txt", JSON.stringify(apps, null, 2), "utf8");
-              res.status(200).send("App is deleted.");
+              if(res!=null)res.status(200).send("App is deleted.");
+	      return true;
             });
           }
         });
       }
     });
- /*       var greenAppDescr = appDescr.green;
+    return false;
+     /*       var greenAppDescr = appDescr.green;
         var blueAppDescr = appDescr.blue;
         if(!greenAppDescr) {
           deleteAppEnv(aid, blueAppDescr, env.blue,  function(err){
@@ -1161,7 +1169,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
         }
       }
     });*/
-  });
+  }
 
   function deleteApp(aid, appDescr, environment, callback){
 
@@ -1467,7 +1475,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   // This method is called when a sequential liquid transfer should be initiated.
   app.post("/transfer", function(req, res1){
     
-    console.log(req.body.url);
+    console.log(req.body.del);
     
     var url = "http://localhost:" + ports[req.body.id]["blue"] + "/api/savestate/"; // URL of the application that should be transferred.
     
@@ -1480,7 +1488,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
           if(body=="true"){
 	    // Everything ok, proceed.
 	    console.log("Packing tarball...");
-	    doTransfer(req.body.id, req.body.url, res1);
+	    doTransfer(req.body.id, req.body.url, res1, req.body.del);
 	  } else{
 	    res1.send(false);
 	  }
@@ -1501,7 +1509,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 ///////////////////////////////////////////////////////////////////
   
   // Do the liquid transfer.
-  function doTransfer(aid, url, res){
+  function doTransfer(aid, url, res, del){
     var appDir = "../app/" + aid + "/blue/";
     var targetDir = "../liquid";
     
@@ -1531,8 +1539,14 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 	    return sendPackage(pkgBuffer,url);
 	  }).then(function(){
 	    console.log("Package sent.");
-	    res.send(true);
-	    return true;
+	    if(del == false){
+	      res.send(true);
+	      return true;
+	    } else{
+	      var succeed = initiateDelete(aid,null)
+	      res.send(succeed);
+	      return succeed;
+	    }
 	  })
 	  .catch(function(){
 	    console.log("Error.");
