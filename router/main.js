@@ -1499,6 +1499,30 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     });
     
   });
+  
+  app.post("/clone", function(req, res){
+    
+    var sourceAppUrl = "http://localhost:" + ports[req.body.id]["blue"] + "/api/syncId";
+    
+    // 1. Does the application already have a syncID?
+    
+    request.get(sourceAppUrl, function(err, resSyncId, body){
+      
+      var syncId = body;
+      
+    });
+    
+    // Yes - Fork application.
+    
+    // No - 1) Ask RR for new syncID
+    
+    // No - 2) Set MY applications syncID
+    
+    // No - 3) Fork application
+    
+    // 2. Respond to IDE.
+    
+  });
 
 ///////////////////////////////////////////////////////////////////
 //////// Specific Instance Related Functions - END ////////////////

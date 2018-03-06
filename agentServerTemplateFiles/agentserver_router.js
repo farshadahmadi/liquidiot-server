@@ -101,6 +101,27 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
       });
     });
     
+    $router.get("/syncId/", function(req, res){
+      
+      var fs = require('fs');
+      var path = require('path');
+      
+      fs.readFile(path.resolve(__dirname, 'liquid-options.json'), (err, data) => {
+	if(err) {
+	  // No file included.
+	  res.status(200).send(0);
+	  return;
+	}
+	options = JSON.parse(data);
+	if(options.hasOwnProperty('syncID')){
+	  res.status(200).send(data['syncID']);
+	  return;
+	}
+	res.status(200).send(0);
+      });
+      
+    });
+    
     exApp.use("/api", $router);
 
     require("./agentserver_handlers")(exApp, exAppServer, iotApp, emitter);
