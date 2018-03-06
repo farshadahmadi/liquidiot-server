@@ -1502,13 +1502,20 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   
   app.post("/clone", function(req, res){
     
-    var sourceAppUrl = "http://localhost:" + ports[req.body.id]["blue"] + "/api/syncId";
+    var sourceAppUrl = "http://localhost:" + ports[req.body.id]["blue"] + "/api/syncId/";
     
     // 1. Does the application already have a syncID?
     
     request.get(sourceAppUrl, function(err, resSyncId, body){
       
+      if(err){
+	console.log(err);
+	res.send(false);
+	return;
+      }
+      
       var syncId = body;
+      console.log(syncId);
       
     });
     
