@@ -106,18 +106,20 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
       var fs = require('fs');
       var path = require('path');
       
-      fs.readFile(path.resolve(__dirname, 'liquid-options.json'), (err, data) => {
+      var options;
+
+      fs.readFile(path.resolve(__dirname, 'liquid-options.json'),'utf8', function(err, data) {
 	if(err) {
 	  // No file included.
-	  res.status(200).send(0);
+	  res.status(200).send("-3");
 	  return;
 	}
 	options = JSON.parse(data);
 	if(options.hasOwnProperty('syncID')){
-	  res.status(200).send(data['syncID']);
+	  res.status(200).send(options['syncID']);
 	  return;
 	}
-	res.status(200).send(0);
+	res.status(200).send("-4");
       });
       
     });
