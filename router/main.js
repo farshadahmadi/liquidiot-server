@@ -1515,7 +1515,6 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 	res.send(false);
 	return;
       }
-
       var syncId = body;
       console.log(syncId);
       
