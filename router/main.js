@@ -1521,8 +1521,14 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     });
     
     // Yes - Fork application.
+    if(body!="-1"){
+      console.log("Sending application to targets.");
+      
+      return;
+    }
     
     // No - 1) Ask RR for new syncID
+    console.log("Request syncID from RR.");
     
     // No - 2) Set MY applications syncID
     
