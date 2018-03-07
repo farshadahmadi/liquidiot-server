@@ -98,7 +98,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
       fs.readFile(path.resolve(__dirname, 'liquid-options.json'),'utf8', function(err, data) {
 	if(err) {
 	  // No file included.
-	  res.status(200).send("-3");
+	  res.status(200).send("-1");
 	  return;
 	}
 	options = JSON.parse(data);
@@ -106,7 +106,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
 	  res.status(200).send(options['syncID']);
 	  return;
 	}
-	res.status(200).send("-4");
+	res.status(200).send("-1");
       });
       
     });
