@@ -1525,6 +1525,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
     request.get(sourceAppUrl, function(err, resSyncId, body){
       
+      console.log("Requesting syncID from application.");
+      
       if(err){
 	console.log(err);
 	res.send(false);
@@ -1544,6 +1546,9 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     
     // No - 1) Ask RR for new syncID
     console.log("Request syncID from RR.");
+    request.get(deviceManagerUrl+"/generateSyncid",function(err, resRR, body){
+      console.log(body);
+    });
     
     // No - 2) Set MY applications syncID
     
