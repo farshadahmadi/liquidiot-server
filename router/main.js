@@ -1501,8 +1501,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       } else if(res1.statusCode == 200){
           if(body=="true"){
 	    // Everything ok, proceed.
-	    console.log("Packing tarball...");
-	    doTransfer(req.body.id, req.body.url, res1, req.body.del);
+	    doTransfer(req.body.id, req.body.url, res1, req.body.del, false);
 	  } else{
 	    res1.send(false);
 	  }
@@ -1539,7 +1538,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     // Yes - Fork application.
     if(syncId!="-1"){
       console.log("Sending application to targets.");
-      
+      doTransfer(req.body.id, req.body.url, res, false, true);
       return;
     }
     
@@ -1563,7 +1562,12 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 ///////////////////////////////////////////////////////////////////
   
   // Do the liquid transfer.
-  function doTransfer(aid, url, res, del){
+  // aid = application ID
+  // url = target urls
+  // res = respond for ide
+  // del = delete the current application
+  // sync = synchronize transffered application
+  function doTransfer(aid, url, res, del, sync){
     var appDir = "../app/" + aid + "/blue/";
     var targetDir = "../liquid";
     
@@ -1572,12 +1576,15 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       mkdirp(path.resolve(__dirname,targetDir),function(err){
 	if(err) console.log(err);
 	else{
-	  var files = ["/agent.js","/liquidiot.json","/main.js","/package.json","/state.json","/liquid-options.json"]; // The files that should be transferred.
+	  var files = ["/agent.js","/liquidiot.json","/main.js","/package.json","/state.json"; // The files that should be transferred.
 	  // Copy all files into the correct directory.
 	  return Promise.all(files.map(function (file){
 	    console.log("Copying file.");
 	    return copyFile((path.resolve(__dirname,appDir)+file),(path.resolve(__dirname,targetDir)+file),function(){});
 	  })).then(function(promise){
+	    if(sync) return copyFile((path.resolve(__dirname,appDir)+"/liquid-options.json"),(path.resolve(__dirname,targetDir)+"/liquid-options.json"),function(){});
+	    return createFile((path.resolve(__dirname,targetDir)+"/liquid-options.json"),JSON.stringify({"syncID":"-1"}),function(){});
+	  }).then(function(promise){
 	    return copyResources((path.resolve(__dirname,appDir)+"/resources"),(path.resolve(__dirname,targetDir)+"/resources"));
 	  }).then(function(){
 	    // Pack the tarball.
@@ -1609,6 +1616,13 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 	  });
 	}
       });
+    });
+  }
+  
+  function createFile(target, data, callback){
+    fs.appendFile(target, data,function(err){
+      if(err) console.log("Couldn't create file.");
+      callback();
     });
   }
   
