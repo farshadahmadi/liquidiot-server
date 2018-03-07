@@ -1508,6 +1508,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     
     console.log("Cloning started.");
 
+    var syncId;
+
     request.get(sourceAppUrl, function(err, resSyncId, body){
       
       if(err){
@@ -1515,13 +1517,13 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 	res.send(false);
 	return;
       }
-      var syncId = body;
+      syncId = body;
       console.log(syncId);
       
     });
     
     // Yes - Fork application.
-    if(body!="-1"){
+    if(syncId!="-1"){
       console.log("Sending application to targets.");
       
       return;
