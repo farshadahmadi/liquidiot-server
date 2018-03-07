@@ -1588,8 +1588,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 	    return copyFile((path.resolve(__dirname,appDir)+file),(path.resolve(__dirname,targetDir)+file),function(){});
 	  })).then(function(promise){
 	    if(sync) return copyFile((path.resolve(__dirname,appDir)+"/liquid-options.json"),(path.resolve(__dirname,targetDir)+"/liquid-options.json"),function(){});
-	    return createFile((path.resolve(__dirname,targetDir)+"/liquid-options.json"),JSON.stringify({"syncID":"-1"}),function(){});
-	  }).then(function(promise){
+	    else return createFile((path.resolve(__dirname,targetDir)+"/liquid-options.json"),JSON.stringify({"syncID":"-1"}),function(){});
+	  }).then(function(){
 	    return copyResources((path.resolve(__dirname,appDir)+"/resources"),(path.resolve(__dirname,targetDir)+"/resources"));
 	  }).then(function(){
 	    // Pack the tarball.
