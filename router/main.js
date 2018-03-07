@@ -304,6 +304,16 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
                 });
     }
     
+    function onAddSyncId(appDescription, aid, env){
+      var options = "./app/" + aid + "/" + env + "/liquid-options.json";
+      fs.readFile(options, 'utf8', function(err, data){
+	if(err) console.log("Error at reading syncID: " + err);
+	var jsondata = JSON.parse(data);
+	appDescription["syncID"] = jsondata["syncID"];
+      });
+      return appDescription;
+    }
+    
     return createAppDir_P(aid, environment)
       .then(function(res){
         console.log(res);
@@ -316,6 +326,10 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       .then(function(res){
         console.log(res);
         return extractAppDescription_P(aid, environment);
+      })
+      .then(function(appDescription){
+	console.log("Description before syncID: " + appDescription);
+	return onAddSyncId(appDescription, aid, environment);
       })
       .then(onGetAppDescr);
   }
