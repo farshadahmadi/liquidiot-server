@@ -1572,7 +1572,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       mkdirp(path.resolve(__dirname,targetDir),function(err){
 	if(err) console.log(err);
 	else{
-	  var files = ["/agent.js","/liquidiot.json","/main.js","/package.json","/state.json"]; // The files that should be transferred.
+	  var files = ["/agent.js","/liquidiot.json","/main.js","/package.json","/state.json","/liquid-options.json"]; // The files that should be transferred.
 	  // Copy all files into the correct directory.
 	  return Promise.all(files.map(function (file){
 	    console.log("Copying file.");
