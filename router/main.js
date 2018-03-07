@@ -1625,7 +1625,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   }
   
   function createFile(target, data, callback){
-    fs.appendFile(target, data,function(err){
+    return fs.appendFile(target, data,function(err){
       if(err) console.log("Couldn't create file.");
       callback();
     });
