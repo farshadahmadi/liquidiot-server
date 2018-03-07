@@ -305,7 +305,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     }
     
     function onAddSyncId(appDescription, aid, env){
-      var options = "./app/" + aid + "/" + env + "/liquid-options.json";
+      var options = "./app/" + aid + "/" + env + "/package/liquid-options.json";
       fs.readFile(options, 'utf8', function(err, data){
 	if(err) console.log("Error at reading syncID: " + err);
 	var jsondata = JSON.parse(data);
