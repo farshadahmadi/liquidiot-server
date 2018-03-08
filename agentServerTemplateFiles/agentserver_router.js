@@ -113,7 +113,13 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
     
     $router.post("/saveSyncId/", function(req, res){
       console.log(req.body);
-      res.send("true");
+      $router({method:"PUT",uri:req.body.rrUrl+req.body.devId"/apps/"+req.body.aId,json:{"syncId":req.body.syncId}},function(err, res, body){
+	if(err) res.send("false");
+	else {
+	  console.log("Save syncId " + req.body.syncId + " to file.");
+	  res.send("true");
+	}
+      });
     });
     
     exApp.use("/api", $router);

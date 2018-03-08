@@ -1568,8 +1568,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 	// No - 2) Set MY applications syncID
 	var devId = deviceInfo.idFromDM;
 	var aId = req.body.id;
-	request({uri:sourceAppUrl+"/saveSyncId/", json:{"devId":devId, "aId":aId, "rrUrl":deviceManagerUrl}, method:"POST"}, function(err, resApp, body){
-	  console.log(resApp.body);
+	request({uri:sourceAppUrl+"/saveSyncId/", json:{"devId":devId, "aId":aId, "rrUrl":deviceManagerUrl, "syncId":body}, method:"POST"}, function(err, resApp, bodyApp){
+	  console.log(resApp.bodyApp);
 	});
 	
 	// No - 3) Fork application
