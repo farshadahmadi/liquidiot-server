@@ -1568,12 +1568,18 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 	// No - 2) Set MY applications syncID
 	var devId = deviceInfo.idFromDM;
 	var aId = req.body.id;
+        var descr;
+        getAppDescr(aId, function(err, descr1){
+          descr = descr1;
+        });
+        console.log(descr);
+        descr.blue.syncID = body+"";
 	request({uri:sourceAppUrl+"/saveSyncId/", json:{"syncId":body}, method:"POST"}, function(err, resApp, bodyApp){
 	  console.log(resApp.bodyApp);
-	  request({method:"PUT",uri:deviceManagerUrl+devId+"/apps/"+aId,json:{"syncId":body}},function(err2, res2, body2){
+	  request({method:"PUT",uri:deviceManagerUrl+devId+"/apps/"+aId,json:descr.blue},function(err2, res2, body2){
 	    if(err2) console.log(err2);
 	    else {
-	      console.log("Send syncId " + req.body.syncId + " to RR.");
+	      console.log("Send syncId " + req.body + " to RR.");
 	    }
 	  });
 	});
