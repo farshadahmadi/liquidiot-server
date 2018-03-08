@@ -1553,9 +1553,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       }
       syncId = body;
       console.log(syncId);
-      return;
       
-    }).then(function(){
       // Yes - Fork application.
       if(syncId!="-1"){
 	console.log("Sending application to targets.");
@@ -1574,8 +1572,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       // No - 3) Fork application
       
       // 2. Respond to IDE.
+      
     });
-    
   }
 
 ///////////////////////////////////////////////////////////////////
