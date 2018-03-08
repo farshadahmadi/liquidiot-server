@@ -1535,8 +1535,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 	console.log(resSave.statuscode);
 	res.send(false);
       }
-    }
-    
+    });
   });
     
   function doSync(sourceAppUrl){
