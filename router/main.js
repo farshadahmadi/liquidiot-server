@@ -1498,7 +1498,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       if(err) {
           console.log(err);
 	  res1.send(false);
-      } else if(res1.statusCode == 200){
+      } else if(res2.statusCode == 200){
           if(body=="true"){
 	    // Everything ok, proceed.
 	    doTransfer(req.body.id, req.body.url, res1, req.body.del, false);
@@ -1515,15 +1515,33 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
   
   app.post("/clone", function(req, res){
     
-    var sourceAppUrl = "http://localhost:" + ports[req.body.id]["blue"] + "/api/syncId/";
+    var sourceAppUrl = "http://localhost:" + ports[req.body.id]["blue"] + "/api";
     console.log(req.body);    
     // 1. Does the application already have a syncID?
     
     console.log("Cloning started.");
-
-    var syncId;
-
-    request.get(sourceAppUrl, function(err, resSyncId, body){
+    
+    request.get(sourceAppUrl+"/savestate", function(err, resSave, body){
+      if(err){
+	console.log(err);
+	res.send(false);
+      } else if(resSave.statusCode == 200){
+	if(body == true){
+	  doSync(sourceAppUrl);
+	}else{
+	  res.send(false);
+	}
+      } else{
+	console.log(resSave.statuscode);
+	res.send(false);
+      }
+    }
+    
+  });
+    
+  function doSync(sourceAppUrl){
+    var syncId; 
+    request.get(sourceAppUrl+"/syncId/", function(err, resSyncId, body){
       
       console.log("Requesting syncID from application.");
       
@@ -1555,8 +1573,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     // No - 3) Fork application
     
     // 2. Respond to IDE.
-    
-  });
+  }
 
 ///////////////////////////////////////////////////////////////////
 //////// Specific Instance Related Functions - END ////////////////
