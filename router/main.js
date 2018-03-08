@@ -1553,27 +1553,29 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       }
       syncId = body;
       console.log(syncId);
-      
-    });
-    
-    // Yes - Fork application.
-    if(syncId!="-1"){
-      console.log("Sending application to targets.");
-      doTransfer(req.body.id, req.body.url, res, false, true);
       return;
-    }
-    
-    // No - 1) Ask RR for new syncID
-    console.log("Request syncID from RR.");
-    request.get(deviceManagerUrl+"/generateSyncid",function(err, resRR, body){
-      console.log(body);
+      
+    }).then(function(){
+      // Yes - Fork application.
+      if(syncId!="-1"){
+	console.log("Sending application to targets.");
+	doTransfer(req.body.id, req.body.url, res, false, true);
+	return;
+      }
+      
+      // No - 1) Ask RR for new syncID
+      console.log("Request syncID from RR.");
+      request.get(deviceManagerUrl+"/generateSyncid",function(err, resRR, body){
+	console.log(body);
+      });
+      
+      // No - 2) Set MY applications syncID
+      
+      // No - 3) Fork application
+      
+      // 2. Respond to IDE.
     });
     
-    // No - 2) Set MY applications syncID
-    
-    // No - 3) Fork application
-    
-    // 2. Respond to IDE.
   }
 
 ///////////////////////////////////////////////////////////////////
