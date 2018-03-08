@@ -1563,7 +1563,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       
       // No - 1) Ask RR for new syncID
       console.log("Request syncID from RR.");
-      request.get(deviceManagerUrl+"/generateSyncid",function(err, resRR, body){
+      request.get(deviceManagerUrl+"generateSyncid",function(err, resRR, body){
 	console.log(body);
       });
       
