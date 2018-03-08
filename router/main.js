@@ -1566,10 +1566,10 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       request.get(deviceManagerUrl+"generateSyncid",function(err, resRR, body){
 	console.log(body);
 	// No - 2) Set MY applications syncID
-	var devId = deviceInfo.id;
+	var devId = deviceInfo.idFromDM;
 	var aId = req.body.id;
-	request.post({"url":sourceAppUrl+"/saveSyncId/", "body":{"devId":devId, "aid":aId}}, function(err, resRR, body){
-	  console.log(res.body);
+	request({uri:sourceAppUrl+"/saveSyncId/", json:{"devId":devId, "aId":aId, "rrUrl":deviceManagerUrl}, method:"POST"}, function(err, resApp, body){
+	  console.log(resApp.body);
 	});
 	
 	// No - 3) Fork application
