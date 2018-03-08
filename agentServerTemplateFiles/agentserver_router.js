@@ -111,6 +111,11 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
       
     });
     
+    $router.post("/saveSyncId/", function(req, res){
+      console.log(req.body);
+      res.send("true");
+    });
+    
     exApp.use("/api", $router);
 
     require("./agentserver_handlers")(exApp, exAppServer, iotApp, emitter);
