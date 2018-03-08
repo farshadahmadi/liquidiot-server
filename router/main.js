@@ -1570,6 +1570,12 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 	var aId = req.body.id;
 	request({uri:sourceAppUrl+"/saveSyncId/", json:{"devId":devId, "aId":aId, "rrUrl":deviceManagerUrl, "syncId":body}, method:"POST"}, function(err, resApp, bodyApp){
 	  console.log(resApp.bodyApp);
+	  request({method:"PUT",uri:deviceManagerUrl+devId+"/apps/"+aId,json:{"syncId":body}},function(err2, res2, body2){
+	    if(err2) console.log(err2);
+	    else {
+	      console.log("Send syncId " + req.body.syncId + " to RR.");
+	    }
+	  });
 	});
 	
 	// No - 3) Fork application
