@@ -1521,14 +1521,16 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     
     console.log("Cloning started.");
     
-    request.get(sourceAppUrl+"/savestate", function(err, resSave, body){
+    request.get(sourceAppUrl+"/savestate/", function(err, resSave, body){
       if(err){
 	console.log(err);
 	res.send(false);
       } else if(resSave.statusCode == 200){
-	if(body == true){
-	  doSync(sourceAppUrl);
+	if(body == "true"){
+	  console.log("do sync");
+          doSync(sourceAppUrl,req);
 	}else{
+          console.log("body is not true");
 	  res.send(false);
 	}
       } else{
@@ -1538,7 +1540,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     });
   });
     
-  function doSync(sourceAppUrl){
+  function doSync(sourceAppUrl,req){
     var syncId; 
     request.get(sourceAppUrl+"/syncId/", function(err, resSyncId, body){
       
