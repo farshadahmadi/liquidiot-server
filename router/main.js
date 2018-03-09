@@ -306,12 +306,16 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     
     function onAddSyncId(appDescription, aid, env){
       var options = "./app/" + aid + "/" + env + "/package/liquid-options.json";
+console.log(options);
       fs.readFile(options, 'utf8', function(err, data){
 	if(err) console.log("Error at reading syncID: " + err);
 	var jsondata = JSON.parse(data);
-	appDescription["syncID"] = jsondata["syncID"];
+console.log(jsondata);
+console.log(JSON.stringify(appDescription));
+	appDescription["syncID"] = jsondata["syncId"];
+console.log(JSON.stringify(appDescription));
+        return appDescription;
       });
-      return appDescription;
     }
     
     return createAppDir_P(aid, environment)
