@@ -297,24 +297,24 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     }
 
     function onGetAppDescr(appDescription){
+console.log("App: "+appDescription);
       return copyFilesToAppDir_P(aid, environment)
                 .then(function(res){
-                  console.log(res);
+                  console.log("RESSSSS: "+res);
                   return onCopyFilesToAppDir(appDescription);
                 });
     }
     
-    function onAddSyncId(appDescription, aid, env){
+    function onAddSyncId(appDescription, aid, env, callback){
       var options = "./app/" + aid + "/" + env + "/package/liquid-options.json";
 console.log(options);
       fs.readFile(options, 'utf8', function(err, data){
 	if(err) console.log("Error at reading syncID: " + err);
 	var jsondata = JSON.parse(data);
-console.log(jsondata);
 console.log(JSON.stringify(appDescription));
-	appDescription["syncID"] = jsondata["syncId"];
+	appDescription["syncID"] = jsondata["syncID"];
 console.log(JSON.stringify(appDescription));
-        return appDescription;
+        callback(appDescription);
       });
     }
     
@@ -333,9 +333,13 @@ console.log(JSON.stringify(appDescription));
       })
       .then(function(appDescription){
 	console.log("Description before syncID: " + appDescription);
-	return onAddSyncId(appDescription, aid, environment);
-      })
-      .then(onGetAppDescr);
+        var newAppDescr;
+	onAddSyncId(appDescription, aid, environment, function(appDescrOld){
+console.log("DESCRRRDDFQFQS    ---   "+JSON.stringify(appDescrOld));
+newAppDescr = appDescrOld;
+return onGetAppDescr(newAppDescr);
+});
+      });
   }
 
   function createAppDir_P(aid, environment) {
