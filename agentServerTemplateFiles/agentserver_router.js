@@ -112,6 +112,8 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
     });
     
     $router.post("/saveSyncId/", function(req, res){
+      var fs = require('fs');
+      var path = require('path');
       console.log(req.body);
       res.send(true);
       console.log("Saving syncId " + req.body.syncId + " to file.");
