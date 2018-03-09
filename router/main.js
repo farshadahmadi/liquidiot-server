@@ -1,4 +1,4 @@
-  /**
+ /**
  * Copyright (c) TUT Tampere University of Technology 2015-2016
  * All rights reserved.
  *
@@ -240,6 +240,8 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     var aid = Math.floor(Math.random() * 1000000);
     installApp_P(req, aid, environment)
       .then(function(appDescr){
+        var sync = onAddSyncId(aid, environment);
+        appDescr.syncID = sync["syncID"];
         appDescr.id = aid;
         appDescr.status = "installed";
         appDescr.canRollback = false;
@@ -305,19 +307,6 @@ console.log("App: "+appDescription);
                 });
     }
     
-    function onAddSyncId(appDescription, aid, env, callback){
-      var options = "./app/" + aid + "/" + env + "/package/liquid-options.json";
-console.log(options);
-      fs.readFile(options, 'utf8', function(err, data){
-	if(err) console.log("Error at reading syncID: " + err);
-	var jsondata = JSON.parse(data);
-console.log(JSON.stringify(appDescription));
-	appDescription["syncID"] = jsondata["syncID"];
-console.log(JSON.stringify(appDescription));
-        callback(appDescription);
-      });
-    }
-    
     return createAppDir_P(aid, environment)
       .then(function(res){
         console.log(res);
@@ -331,15 +320,7 @@ console.log(JSON.stringify(appDescription));
         console.log(res);
         return extractAppDescription_P(aid, environment);
       })
-      .then(function(appDescription){
-	console.log("Description before syncID: " + appDescription);
-        var newAppDescr;
-	onAddSyncId(appDescription, aid, environment, function(appDescrOld){
-console.log("DESCRRRDDFQFQS    ---   "+JSON.stringify(appDescrOld));
-newAppDescr = appDescrOld;
-return onGetAppDescr(newAppDescr);
-});
-      });
+      .then(onGetAppDescr);
   }
 
   function createAppDir_P(aid, environment) {
@@ -383,6 +364,13 @@ return onGetAppDescr(newAppDescr);
     } else {
       throw new Error("Package.json format is incorrect. No Main entry.");
     }
+  }
+
+  function onAddSyncId(aid, env){
+    var options = "./app/"+aid+"/"+env+"/liquid-options.json";
+    var data = JSON.parse(fs.readFileSync(options, 'utf8'));
+    console.log("DATA SYNC: "+JSON.stringify(data));
+    return data;
   }
 
   function onReadPackage(dir, src){
