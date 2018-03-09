@@ -1528,7 +1528,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       } else if(resSave.statusCode == 200){
 	if(body == "true"){
 	  console.log("do sync");
-          doSync(sourceAppUrl,req);
+          doSync(sourceAppUrl,req,res);
 	}else{
           console.log("body is not true");
 	  res.send(false);
@@ -1540,7 +1540,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     });
   });
     
-  function doSync(sourceAppUrl,req){
+  function doSync(sourceAppUrl,req,res){
     var syncId; 
     request.get(sourceAppUrl+"/syncId/", function(err, resSyncId, body){
       
@@ -1580,15 +1580,14 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 	      console.log("Send syncId " + body + " to RR.");
 	      
 	      // No - 3) Fork application
-	      
-	      
+	      console.log("Sending application to targets.");
+	      doTransfer(req.body.id, req.body.url, res, false, true);
+	      return;
 	      
 	    }
 	  });
 	});
       });
-      
-      // 2. Respond to IDE.
       
     });
   }
