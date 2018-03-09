@@ -241,7 +241,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
     installApp_P(req, aid, environment)
       .then(function(appDescr){
         var sync = onAddSyncId(aid, environment);
-        appDescr.syncID = sync["syncID"];
+        appDescr.syncID = sync["syncId"];
         appDescr.id = aid;
         appDescr.status = "installed";
         appDescr.canRollback = false;
