@@ -46,6 +46,16 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
     exApp.server = exAppServer;
     
     var iotApp = {};
+    var cachedIotApp = {};
+    
+    setInterval(function(){
+      for(var key in iotApp){
+	if(cachedIotApp[key] != iotApp[key]){
+	  cahcedIotApp[key] = iotApp[key];
+	  console.log(key + " changed value to " + cachedIotApp[key] + " and has been cached.");
+	}
+      }
+    },100);
 
     var $router = express.Router();
     $router.use(bodyParser.json());
