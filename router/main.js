@@ -242,7 +242,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
       .then(function(appDescr){
         var sync = onAddSyncId(aid, environment);
         console.log(sync);
-        appDescr.syncID = sync["syncId"];
+        appDescr.syncID = sync["syncID"];
         appDescr.id = aid;
         appDescr.status = "installed";
         appDescr.canRollback = false;
@@ -1570,7 +1570,7 @@ console.log("App: "+appDescription);
           descr = descr1;
         });
         descr.blue.syncID = body+"";
-	request({uri:sourceAppUrl+"/saveSyncId/", json:{"syncId":body}, method:"POST"}, function(err, resApp, bodyApp){
+	request({uri:sourceAppUrl+"/saveSyncId/", json:{"syncID":body}, method:"POST"}, function(err, resApp, bodyApp){
 	  request({method:"PUT",uri:deviceManagerUrl+devId+"/apps/"+aId,json:descr.blue},function(err2, res2, body2){
 	    if(err2) console.log(err2);
 	    else {
