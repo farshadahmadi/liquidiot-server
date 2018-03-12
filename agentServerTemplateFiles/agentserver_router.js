@@ -51,9 +51,15 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
     setInterval(function(){
       for(var key in iotApp){
 	if(cachedIotApp[key] != iotApp[key]){
-	  cahcedIotApp[key] = iotApp[key];
+	  cachedIotApp[key] = iotApp[key];
 	  console.log(key + " changed value to " + cachedIotApp[key] + " and has been cached.");
 	}
+      }
+      for(var key in cachedIotApp){
+        if(typeof iotApp[key] == 'undefined'){
+          delete cachedIotApp[key];
+          console.log(key + " has been removed from the cache.");
+        }
       }
     },100);
 
