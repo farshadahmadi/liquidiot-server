@@ -8,7 +8,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
   var fs = require("fs");
   var util = require("util");
   var bodyParser = require("body-parser");
-
+  var rp = require("request-promise");
   var express = require('express');
 
   var log_file = fs.createWriteStream(cwd + "debug.log", {flags : "a"});
@@ -53,6 +53,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
 	if(cachedIotApp[key] != iotApp[key]){
 	  cachedIotApp[key] = iotApp[key];
 	  console.log(key + " changed value to " + cachedIotApp[key] + " and has been cached.");
+          getSyncDevices();
 	}
       }
       for(var key in cachedIotApp){
@@ -62,6 +63,15 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
         }
       }
     },100);
+
+    function getSyncDevices(){
+      var options = {};
+      options.url = RRUrl + "?device=FOR+device+IN+devices+FOR+app+IN+device.apps[*]+RETURN+{\"deviceID\":device.name,\"appId\":app.id}";
+      options.method = "GET";
+      rp(options).then(function(res){
+        console.log("THE RESULTS ARE IN... "+JSON.stringify(res));
+      });
+    }
 
     var $router = express.Router();
     $router.use(bodyParser.json());
