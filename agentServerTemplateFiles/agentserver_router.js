@@ -71,7 +71,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
 
     function getSyncDevices(){
       var options = {};
-      options.url = RRUrl + "?device=FOR+device+IN+devices+FOR+app+IN+device.apps[*]+FILTER+app.syncID==\""+appDescr.syncID+"\"+FILTER+app.id==\""+appDescr.id+"\"+RETURN+{\"deviceID\":device.name,\"appId\":app.id}";
+      options.url = RRUrl + "?device=FOR+device+IN+devices+FOR+app+IN+device.apps[*]+FILTER+app.syncID==\""+appDescr.syncID+"\"+FILTER+app.id!="+appDescr.id+"+RETURN+{\"deviceID\":device.name,\"appId\":app.id}";
       options.method = "GET";
       rp(options).then(function(res){
         console.log("THE RESULTS ARE IN... "+res);
