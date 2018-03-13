@@ -10,6 +10,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
   var bodyParser = require("body-parser");
   var rp = require("request-promise");
   var express = require('express');
+  var _ = require('lodash');
 
   var log_file = fs.createWriteStream(cwd + "debug.log", {flags : "a"});
 
@@ -49,27 +50,31 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
     var cachedIotApp = {};
     
     setInterval(function(){
-      for(var key in iotApp){
-	if(cachedIotApp[key] != iotApp[key]){
-	  cachedIotApp[key] = iotApp[key];
-	  console.log(key + " changed value to " + cachedIotApp[key] + " and has been cached.");
+      if(appDescr.syncID != -1){
+        var changes = {};
+        for(var key in iotApp){
+	  if(cachedIotApp[key] != iotApp[key]){
+	    cachedIotApp[key] = iotApp[key];
+            changes[key] = cachedIotApp[key];
+	  }
+        }
+        for(var key in cachedIotApp){
+          if(typeof iotApp[key] == 'undefined'){
+            delete cachedIotApp[key];
+          }
+        }
+        if(!_.isEmpty(changes)){
           getSyncDevices();
-	}
-      }
-      for(var key in cachedIotApp){
-        if(typeof iotApp[key] == 'undefined'){
-          delete cachedIotApp[key];
-          console.log(key + " has been removed from the cache.");
         }
       }
     },100);
 
     function getSyncDevices(){
       var options = {};
-      options.url = RRUrl + "?device=FOR+device+IN+devices+FOR+app+IN+device.apps[*]+RETURN+{\"deviceID\":device.name,\"appId\":app.id}";
+      options.url = RRUrl + "?device=FOR+device+IN+devices+FOR+app+IN+device.apps[*]+FILTER+app.syncID==\""+appDescr.syncID+"\"+FILTER+app.id==\""+appDescr.id+"\"+RETURN+{\"deviceID\":device.name,\"appId\":app.id}";
       options.method = "GET";
       rp(options).then(function(res){
-        console.log("THE RESULTS ARE IN... "+JSON.stringify(res));
+        console.log("THE RESULTS ARE IN... "+res);
       });
     }
 
