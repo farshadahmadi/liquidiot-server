@@ -48,6 +48,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
     
     var iotApp = {};
     var cachedIotApp = {};
+    var last_update = 0;
     
     setInterval(function(){
       if(appDescr.syncID != -1){
@@ -64,18 +65,46 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
           }
         }
         if(!_.isEmpty(changes)){
-          getSyncDevices();
+          getSyncDevices().then(function(res){
+            console.log(res);
+            var promises = [];
+            last_update = Date.now();
+            res.forEach(function(row){
+              var url = row.deviceURL + "/sync/";
+              var data = {};
+              data["aid"] = row.appId;
+              data["time"] = last_update;
+              for(var key in changes){
+                data[key] = changes[key];
+              }
+              console.log("URL ---- " + url);
+              console.log("DATA ---- " + data);
+              promises.push(sendSync(url, data));
+            });
+            Promise.all(promises).then(function(){
+              console.log("SEND ALL SYNC");
+            });
+          });
         }
       }
     },100);
 
     function getSyncDevices(){
       var options = {};
-      options.url = RRUrl + "?device=FOR+device+IN+devices+FOR+app+IN+device.apps[*]+FILTER+app.syncID==\""+appDescr.syncID+"\"+FILTER+app.id!="+appDescr.id+"+RETURN+{\"deviceID\":device.name,\"appId\":app.id}";
+      options.url = RRUrl + "?device=FOR+device+IN+devices+FOR+app+IN+device.apps[*]+FILTER+app.syncID==\""+appDescr.syncID+"\"+FILTER+app.id!="+appDescr.id+"+RETURN+{\"deviceURL\":device.url,\"appId\":app.id}";
       options.method = "GET";
-      rp(options).then(function(res){
-        console.log("THE RESULTS ARE IN... "+res);
+      return rp(options).then(function(res){
+        return JSON.parse(res);
       });
+    }
+
+    function sendSync(url, data){
+      var options = {};
+      options.method = 'POST';
+      options.body = data;
+      options.json = true;
+      options.uri = url;
+      return rp(options);
     }
 
     var $router = express.Router();
@@ -96,6 +125,10 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
       //logger.log(JSON.stringify(req.body));
       impactEvents.emit(req.body.id, JSON.stringify(req.body.data));
       res.status(200).send("hello dispatcher!");
+    });
+
+    $router.post("/sync/", function(req, res){
+      console.log("IK KREEG EM HAHAHAHAHA " + JSON.stringify(req.body));
     });
     
     $router.get("/savestate/", function(req, res){
