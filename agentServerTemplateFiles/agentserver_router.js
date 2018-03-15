@@ -50,15 +50,20 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
     var cachedIotApp = {};
     var last_update = 0;
     
+    // This function polls the state of the app every 100ms.
     setInterval(function(){
+      // Check if the app is synchronized to some other device.
       if(appDescr.syncID != -1){
         var changes = {};
         for(var key in iotApp){
+          // Compare to cache.
 	  if(cachedIotApp[key] != iotApp[key]){
 	    cachedIotApp[key] = iotApp[key];
             changes[key] = cachedIotApp[key];
 	  }
         }
+        // Delete from cache if variable is deleted.
+        // This does not get synced yet.
         for(var key in cachedIotApp){
           if(typeof iotApp[key] == 'undefined'){
             delete cachedIotApp[key];
@@ -69,6 +74,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
             console.log(res);
             var promises = [];
             last_update = Date.now();
+            // Send the updates to all devices.
             res.forEach(function(row){
               var url = row.deviceURL + "/sync/";
               var data = {};
@@ -88,7 +94,8 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
         }
       }
     },100);
-
+    
+    // Returns all deviceURLs and appIDs of the apps that are synchronized.
     function getSyncDevices(){
       var options = {};
       options.url = RRUrl + "?device=FOR+device+IN+devices+FOR+app+IN+device.apps[*]+FILTER+app.syncID==\""+appDescr.syncID+"\"+FILTER+app.id!="+appDescr.id+"+RETURN+{\"deviceURL\":device.url,\"appId\":app.id}";
@@ -98,6 +105,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
       });
     }
 
+    // Sends the syncing data to the device. The appID is attached.
     function sendSync(url, data){
       var options = {};
       options.method = 'POST';
@@ -126,7 +134,8 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
       impactEvents.emit(req.body.id, JSON.stringify(req.body.data));
       res.status(200).send("hello dispatcher!");
     });
-
+  
+    // This function is used when the syncdata has been received.
     $router.post("/sync/", function(req, res){
       console.log("IK KREEG EM HAHAHAHAHA " + JSON.stringify(req.body));
     });
