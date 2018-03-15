@@ -149,11 +149,11 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
       if(req.body["time"] > last_update){
         console.log("Data is newer.");
         last_update = req.body["time"];
-        for(key in req.body["data"]){
+        for(var key in req.body["data"]){
           iotApp[key] = req.body["data"][key];
           cachedIotApp[key] = iotApp[key];
         }
-        for(key in req.body["dels"]){
+        for(var key in req.body["dels"]){
           delete iotApp[key];
           delete cachedIotApp[key];
         }
