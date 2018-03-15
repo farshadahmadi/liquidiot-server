@@ -55,17 +55,20 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
       // Check if the app is synchronized to some other device.
       if(appDescr.syncID != -1){
         var changes = {};
+        var deletions = {};
         for(var key in iotApp){
           // Compare to cache.
 	  if(cachedIotApp[key] != iotApp[key]){
 	    cachedIotApp[key] = iotApp[key];
-            changes[key] = cachedIotApp[key];
+            if(Date.now() > last_update){
+              changes[key] = cachedIotApp[key];
+            }
 	  }
         }
         // Delete from cache if variable is deleted.
-        // This does not get synced yet.
         for(var key in cachedIotApp){
           if(typeof iotApp[key] == 'undefined'){
+            deletions[key] = -1;
             delete cachedIotApp[key];
           }
         }
@@ -80,8 +83,13 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
               var data = {};
               data["aid"] = row.appId;
               data["time"] = last_update;
+              data["data"] = {};
+              data["dels"] = {};
               for(var key in changes){
-                data[key] = changes[key];
+                data["data"][key] = changes[key];
+              }
+              for(var key in deletions){
+                data["dels"][key] = deletions[key];
               }
               console.log("URL ---- " + url);
               console.log("DATA ---- " + data);
@@ -137,7 +145,19 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
   
     // This function is used when the syncdata has been received.
     $router.post("/sync/", function(req, res){
-      console.log("IK KREEG EM HAHAHAHAHA " + JSON.stringify(req.body));
+      console.log(JSON.stringify(req.body));
+      if(req.body["time"] > last_update){
+        console.log("Data is newer.");
+        last_update = req.body["time"];
+        for(key in req.body["data"]){
+          iotApp[key] = req.body["data"][key];
+          cachedIotApp[key] = iotApp[key];
+        }
+        for(key in req.body["dels"]){
+          delete iotApp[key];
+          delete cachedIotApp[key];
+        }
+      }
     });
     
     $router.get("/savestate/", function(req, res){
