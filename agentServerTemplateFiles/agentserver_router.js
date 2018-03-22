@@ -103,7 +103,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
 	      });
 	    });
 	  } else{
-	    var url = RRUrl + "/stateupdate";
+	    var url = RRUrl + "stateupdate";
 	    var data = {};
 	    data["aid"] = appDescr.id;
 	    data["time"] = last_update;
