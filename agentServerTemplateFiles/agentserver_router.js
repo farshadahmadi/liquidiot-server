@@ -107,7 +107,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
 	    var data = {};
 	    data["aid"] = appDescr.id;
 	    data["time"] = last_update;
-	    data["syncID"] = appDescr.id;
+	    data["syncID"] = appDescr.syncID;
 	    data["data"] = {};
 	    data["dels"] = {};
 	    for(var key in changes){
