@@ -105,7 +105,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
 	  } else{
 	    var url = RRUrl + "/stateupdate";
 	    var data = {};
-	    data["aid"] = row.appId;
+	    data["aid"] = appDescr.id;
 	    data["time"] = last_update;
 	    data["syncID"] = appDescr.id;
 	    data["data"] = {};
@@ -118,7 +118,9 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
 	    }
 	    sendSync(url, data).then(function(){
 	      console.log("Data sent to external server.");
-	    });
+	    }).catch(function(err){
+              console.log(err);
+            });;
 	  }
         }
       }
