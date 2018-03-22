@@ -50,6 +50,8 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
     var cachedIotApp = {};
     var last_update = 0;
     
+    var p2p = false;
+    
     // This function polls the state of the app every 100ms.
     setInterval(function(){
       // Check if the app is synchronized to some other device.
@@ -73,32 +75,51 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
           }
         }
         if(!_.isEmpty(changes)){
-          getSyncDevices().then(function(res){
-            console.log(res);
-            var promises = [];
-            last_update = Date.now();
-            // Send the updates to all devices.
-            res.forEach(function(row){
-              var url = row.deviceURL + "/sync/";
-              var data = {};
-              data["aid"] = row.appId;
-              data["time"] = last_update;
-              data["data"] = {};
-              data["dels"] = {};
-              for(var key in changes){
-                data["data"][key] = changes[key];
-              }
-              for(var key in deletions){
-                data["dels"][key] = deletions[key];
-              }
-              console.log("URL ---- " + url);
-              console.log("DATA ---- " + data);
-              promises.push(sendSync(url, data));
-            });
-            Promise.all(promises).then(function(){
-              console.log("SEND ALL SYNC");
-            });
-          });
+	  if(p2p == true){
+	    getSyncDevices().then(function(res){
+	      console.log(res);
+	      var promises = [];
+	      last_update = Date.now();
+	      // Send the updates to all devices.
+	      res.forEach(function(row){
+		var url = row.deviceURL + "/sync/";
+		var data = {};
+		data["aid"] = row.appId;
+		data["time"] = last_update;
+		data["data"] = {};
+		data["dels"] = {};
+		for(var key in changes){
+		  data["data"][key] = changes[key];
+		}
+		for(var key in deletions){
+		  data["dels"][key] = deletions[key];
+		}
+		console.log("URL ---- " + url);
+		console.log("DATA ---- " + data);
+		promises.push(sendSync(url, data));
+	      });
+	      Promise.all(promises).then(function(){
+		console.log("SEND ALL SYNC");
+	      });
+	    });
+	  } else{
+	    var url = RRUrl + "/stateupdate";
+	    var data = {};
+	    data["aid"] = row.appId;
+	    data["time"] = last_update;
+	    data["syncID"] = appDescr.id;
+	    data["data"] = {};
+	    data["dels"] = {};
+	    for(var key in changes){
+	      data["data"][key] = changes[key];
+	    }
+	    for(var key in deletions){
+	      data["dels"][key] = deletions[key];
+	    }
+	    sendSync(url, data).then(function(){
+	      console.log("Data sent to external server.");
+	    });
+	  }
         }
       }
     },100);
