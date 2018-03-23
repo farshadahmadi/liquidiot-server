@@ -75,11 +75,11 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
           }
         }
         if(!_.isEmpty(changes)){
+          last_update = Date.now();
 	  if(p2p == true){
 	    getSyncDevices().then(function(res){
 	      console.log(res);
 	      var promises = [];
-	      last_update = Date.now();
 	      // Send the updates to all devices.
 	      res.forEach(function(row){
 		var url = row.deviceURL + "/sync/";
