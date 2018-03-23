@@ -1511,7 +1511,6 @@ console.log("App: "+appDescription);
   });
 
   app.post("/sync/", function(req, res){
-    console.log("DATA VAN DE PAPA:   " + JSON.stringify(req.body));
     var sourceAppUrl = "http://localhost:" + ports[req.body.aid]["blue"] + "/api/sync";
     var options  = {};
     options.uri = sourceAppUrl;
