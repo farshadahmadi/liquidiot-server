@@ -60,7 +60,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
         var deletions = {};
         for(var key in iotApp){
           // Compare to cache.
-	  if(cachedIotApp[key] != iotApp[key]){
+	  if(!_.isEqual(cachedIotApp[key], iotApp[key])){
 	    cachedIotApp[key] = iotApp[key];
             if(Date.now() > last_update){
               changes[key] = cachedIotApp[key];
