@@ -47,7 +47,9 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
     exApp.server = exAppServer;
     
     var iotApp = {};
+    // This cache is used to detect changes in the app.
     var cachedIotApp = {};
+    // Time since last syncing update.
     var last_update = 0;
     
     var p2p = false;
@@ -60,7 +62,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
         var deletions = {};
         for(var key in iotApp){
           // Compare to cache.
-          if(_.isEqual(cachedIotApp[key], iotApp[key])){console.log("Compare cache with app: true");}
+          // DOES NOT WORK FOR ARRAYS YET
 	  if(!_.isEqual(cachedIotApp[key], iotApp[key])){
 	    cachedIotApp[key] = iotApp[key];
             if(Date.now() > last_update){
@@ -75,8 +77,10 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
             delete cachedIotApp[key];
           }
         }
-        if(!_.isEmpty(changes)){
+        // If a change or deletion happened, the app should sync.
+        if(!_.isEmpty(changes) || !_isEmpty(deletions)){
           last_update = Date.now();
+          // If the syncing happens in a P2P fashion.
 	  if(p2p == true){
 	    getSyncDevices().then(function(res){
 	      console.log(res);
@@ -95,14 +99,11 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
 		for(var key in deletions){
 		  data["dels"][key] = deletions[key];
 		}
-		console.log("URL ---- " + url);
-		console.log("DATA ---- " + data);
 		promises.push(sendSync(url, data));
 	      });
-	      Promise.all(promises).then(function(){
-		console.log("SEND ALL SYNC");
-	      });
+	      Promise.all(promises).then(function(){ });
 	    });
+          // If the syncing happens in a Master-slave fashion.
 	  } else{
 	    var url = RRUrl + "stateupdate";
 	    var data = {};
@@ -127,7 +128,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
       }
     },100);
     
-    // Returns all deviceURLs and appIDs of the apps that are synchronized.
+    // Returns all deviceURLs and appIDs of the apps that are synchronized. Only used for P2P syncing.
     function getSyncDevices(){
       var options = {};
       options.url = RRUrl + "?device=FOR+device+IN+devices+FOR+app+IN+device.apps[*]+FILTER+app.syncID==\""+appDescr.syncID+"\"+FILTER+app.id!="+appDescr.id+"+RETURN+{\"deviceURL\":device.url,\"appId\":app.id}";
@@ -138,6 +139,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
     }
 
     // Sends the syncing data to the device. The appID is attached.
+    // The device will relay the update to the target application.
     function sendSync(url, data){
       var options = {};
       options.method = 'POST';
@@ -205,6 +207,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
       });
     });
     
+    // This function is called to retrieve the syncID. Will return -1 for a non-synced application.
     $router.get("/syncId/", function(req, res){
       
       var fs = require('fs');
@@ -228,6 +231,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
       
     });
     
+    // This function saves a new syncID.
     $router.post("/saveSyncId/", function(req, res){
       var fs = require('fs');
       var path = require('path');

@@ -1510,6 +1510,9 @@ console.log("App: "+appDescription);
     
   });
 
+  // This function gets called when an external application (for P2P fashion) or the external server (for MAster-slave fashion) 
+  // wants to sync with an application deployed on this device.
+  // This function just relays the message to the application.
   app.post("/sync/", function(req, res){
     var sourceAppUrl = "http://localhost:" + ports[req.body.aid]["blue"] + "/api/sync";
     var options  = {};
@@ -1520,21 +1523,22 @@ console.log("App: "+appDescription);
     rp(options);
   });
   
+  // This function gets called when an application on this deivce needs to be cloned.
   app.post("/clone", function(req, res){
     
     var sourceAppUrl = "http://localhost:" + ports[req.body.id]["blue"] + "/api";
-    console.log(req.body);    
-    // 1. Does the application already have a syncID?
     
     console.log("Cloning started.");
     
+    // For cloning, the current state of the application should ALWAYS be saved. This is initial syncing.
     request.get(sourceAppUrl+"/savestate/", function(err, resSave, body){
       if(err){
 	console.log(err);
 	res.send(false);
       } else if(resSave.statusCode == 200){
 	if(body == "true"){
-	  console.log("do sync");
+          // If saving the current state is succesful, the cloning can continue.
+	  console.log("State is saved.");
           doSync(sourceAppUrl,req,res);
 	}else{
           console.log("body is not true");
@@ -1547,8 +1551,14 @@ console.log("App: "+appDescription);
     });
   });
     
+  // This function handles the syncing part of a clone.
+  // It relays the syncID to the target device if the source device already has a syncID and
+  // requests a new syncID from the RR if the source device does not have a syncID yet.
   function doSync(sourceAppUrl,req,res){
     var syncId; 
+    // Request the syncID from the source application.
+    // The syncID is -1 if the source applications syncID is not set. 
+    // It will be a positive integer if it is set.
     request.get(sourceAppUrl+"/syncId/", function(err, resSyncId, body){
       
       console.log("Requesting syncID from application.");
@@ -1559,19 +1569,19 @@ console.log("App: "+appDescription);
 	return;
       }
       syncId = body;
-      console.log(syncId);
-      
+
+      // Is the sources syncID set?      
+
       // Yes - Fork application.
       if(syncId!="-1"){
 	console.log("Sending application to targets.");
-	doTransfer(req.body.id, req.body.url, res, false, true);
-	return;
+        // The syncID is already set. Now a transfer can happen.
+	return doTransfer(req.body.id, req.body.url, res, false, true);
       }
       
       // No - 1) Ask RR for new syncID
       console.log("Request syncID from RR.");
       request.get(deviceManagerUrl+"generateSyncid",function(err, resRR, body){
-	console.log(body);
 	// No - 2) Set MY applications syncID
 	var devId = deviceInfo.idFromDM;
 	var aId = req.body.id;
@@ -1579,17 +1589,19 @@ console.log("App: "+appDescription);
         getAppDescr(aId, function(err, descr1){
           descr = descr1;
         });
+        // The description of the source application is changed so the RR can be updated.
         descr.blue.syncID = body+"";
+        // Change the syncID locally on the source application.
 	request({uri:sourceAppUrl+"/saveSyncId/", json:{"syncID":body}, method:"POST"}, function(err, resApp, bodyApp){
-	  request({method:"PUT",uri:deviceManagerUrl+devId+"/apps/"+aId,json:descr.blue},function(err2, res2, body2){
+	  // Change the syncID of the source application on the server.
+          request({method:"PUT",uri:deviceManagerUrl+devId+"/apps/"+aId,json:descr.blue},function(err2, res2, body2){
 	    if(err2) console.log(err2);
 	    else {
-	      console.log("Send syncId " + body + " to RR.");
+	      console.log("Sent syncId " + body + " to RR.");
 	      
 	      // No - 3) Fork application
 	      console.log("Sending application to targets.");
-	      doTransfer(req.body.id, req.body.url, res, false, true);
-	      return;
+	      return doTransfer(req.body.id, req.body.url, res, false, true);
 	      
 	    }
 	  });
@@ -1615,41 +1627,44 @@ console.log("App: "+appDescription);
   // sync = synchronize transffered application
   function doTransfer(aid, url, res, del, sync){
     var appDir = "../app/" + aid + "/blue/";
+    // This folder gets used to place all files that are needed for a liquid transfer.
+    // It is then packed and sent to the target application.
     var targetDir = "../liquid";
     
     // Empty the folder in which the transferrable files will be packed.
     rimraf(path.resolve(__dirname,targetDir), function(){
+      // Make the folder again. This is the easiest way to empty a folder.
       mkdirp(path.resolve(__dirname,targetDir),function(err){
 	if(err) console.log(err);
 	else{
 	  var files = ["/agent.js","/liquidiot.json","/main.js","/package.json","/state.json"]; // The files that should be transferred.
 	  // Copy all files into the correct directory.
 	  return Promise.all(files.map(function (file){
-	    console.log("Copying file.");
 	    return copyFile((path.resolve(__dirname,appDir)+file),(path.resolve(__dirname,targetDir)+file),function(){});
 	  })).then(function(promise){
+            // All files are copied, except the one for syncing. This should only be copied when a clone happens.
 	    if(sync) return copyFile((path.resolve(__dirname,appDir)+"/liquid-options.json"),(path.resolve(__dirname,targetDir)+"/liquid-options.json"),function(){});
 	    else return createFile((path.resolve(__dirname,targetDir)+"/liquid-options.json"),JSON.stringify({"syncID":"-1"}),function(){});
 	  }).then(function(){
+            // Finally, copy the resources.
 	    return copyResources((path.resolve(__dirname,appDir)+"/resources"),(path.resolve(__dirname,targetDir)+"/resources"));
 	  }).then(function(){
 	    // Pack the tarball.
-	    console.log("Packing promsie.");
+	    console.log("Packing tarball.");
 	    return npmPackPromise(path.resolve(__dirname,targetDir));
 	  }).then(function(pkgFilename){
-	    console.log("File packed.");
 	    // Read the tarball.
 	    return fsp.readFileAsync(path.resolve(__dirname,pkgFilename));
 	  }).then(function(pkgBuffer){
-	    console.log("Sending package");
+	    console.log("Sending tarball.");
 	    // Send the tarball.
 	    return sendPackage(pkgBuffer,url);
 	  }).then(function(){
-	    console.log("Package sent.");
 	    if(del == false){
 	      res.send(true);
 	      return true;
 	    } else{
+              // When a migrate happens, the source applicaiton should be deleted.
 	      initiateDelete(aid,null)
 	      res.send(true);
 	      return true;
@@ -1664,7 +1679,8 @@ console.log("App: "+appDescription);
       });
     });
   }
-  
+ 
+  // Function creates a file. 
   function createFile(target, data, callback){
     return fs.appendFile(target, data,function(err){
       if(err) console.log("Couldn't create file.");
@@ -1702,6 +1718,9 @@ console.log("App: "+appDescription);
   
   // Pack a tarball.
   // https://github.com/npm/npm/issues/4074
+  //
+  // Make sure the process has the cache for itself.
+  // If another process also wants to access the cache, this code will NOT work.
   function npmPackPromise(dir) {
     return new Promise(function(resolve, reject) {
       npm.load({}, function(err) {
