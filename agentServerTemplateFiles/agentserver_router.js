@@ -63,11 +63,9 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
         for(var key in iotApp){
           // Compare to cache.
           // DOES NOT WORK FOR ARRAYS YET
-	  if(!_.isEqual(cachedIotApp[key], iotApp[key])){
+	  if(!myIsEqual(cachedIotApp[key], iotApp[key])){
 	    cachedIotApp[key] = iotApp[key];
-            if(Date.now() > last_update){
-              changes[key] = cachedIotApp[key];
-            }
+            changes[key] = cachedIotApp[key];
 	  }
         }
         // Delete from cache if variable is deleted.
@@ -78,7 +76,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
           }
         }
         // If a change or deletion happened, the app should sync.
-        if(!_.isEmpty(changes) || !_isEmpty(deletions)){
+        if(!_.isEmpty(changes) || !_.isEmpty(deletions)){
           last_update = Date.now();
           // If the syncing happens in a P2P fashion.
 	  if(p2p == true){
@@ -244,6 +242,26 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
 	}
       });
     });
+
+   function myIsEqual(data1, data2){
+     if(((data1 instanceof Array) && !(data2 instanceof Array)) || ((data2 instanceof Array) && !(data1 instanceof Array))){
+       // One is an array, the other is not.
+       return false;
+     }
+     if((data1 instanceof Array) && (data2 instanceof Array)){
+       // Both are arrays
+       // Length must be the same.
+       if(data1.length != data2.length) return false;
+       // Every element must be the same and in the same order.
+       for(var i = 0; i < data1.length; i++){
+         if(!_.isEqual(data1[i], data2[i])){
+           return false;
+         }
+       }
+       return true;
+     }
+     return _.isEqual(data1, data2);
+   }
     
     exApp.use("/api", $router);
 
