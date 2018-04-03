@@ -261,7 +261,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
        if(data1.length != data2.length) return false;
        // Every element must be the same and in the same order.
        for(var i = 0; i < data1.length; i++){
-         if(!_.myIsEqual(data1[i], data2[i])){
+         if(!myIsEqual(data1[i], data2[i])){
            return false;
          }
        }
