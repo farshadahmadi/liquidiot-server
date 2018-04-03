@@ -46,19 +46,25 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
 
     exApp.server = exAppServer;
     
+    // This contains all variables of the application.
     var iotApp = {};
     // This cache is used to detect changes in the app.
     var cachedIotApp = {};
     // Time since last syncing update.
     var last_update = 0;
     
+    // Use Peer-to-peer communication for synchronization.
     var p2p = false;
+    // How often the state should be synchronized.
+    var syncInterval = 100;
     
-    // This function polls the state of the app every 100ms.
+    // This function polls the state of the app every syncInterval.
     setInterval(function(){
       // Check if the app is synchronized to some other device.
       if(appDescr.syncID != -1){
+        // An object that keeps track of all the changes that happened in the iotApp since the last check.
         var changes = {};
+        // Similar to the changes object, but keeps track of all deletions.
         var deletions = {};
         for(var key in iotApp){
           // Compare to cache.
@@ -81,7 +87,6 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
           // If the syncing happens in a P2P fashion.
 	  if(p2p == true){
 	    getSyncDevices().then(function(res){
-	      console.log(res);
 	      var promises = [];
 	      // Send the updates to all devices.
 	      res.forEach(function(row){
@@ -124,7 +129,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
 	  }
         }
       }
-    },100);
+    },syncInterval);
     
     // Returns all deviceURLs and appIDs of the apps that are synchronized. Only used for P2P syncing.
     function getSyncDevices(){
@@ -170,6 +175,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
     // This function is used when the syncdata has been received.
     $router.post("/sync/", function(req, res){
       console.log(JSON.stringify(req.body));
+      // If the timestamp indicates that the update-request is newer, do an update.
       if(req.body["time"] > last_update){
         console.log("Data is newer.");
         last_update = req.body["time"];
@@ -243,6 +249,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
       });
     });
 
+   // Attempt at comparing arrays.
    function myIsEqual(data1, data2){
      if(((data1 instanceof Array) && !(data2 instanceof Array)) || ((data2 instanceof Array) && !(data1 instanceof Array))){
        // One is an array, the other is not.
@@ -254,12 +261,13 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
        if(data1.length != data2.length) return false;
        // Every element must be the same and in the same order.
        for(var i = 0; i < data1.length; i++){
-         if(!_.isEqual(data1[i], data2[i])){
+         if(!_.myIsEqual(data1[i], data2[i])){
            return false;
          }
        }
        return true;
      }
+     // Data are objects, use lodash.
      return _.isEqual(data1, data2);
    }
     

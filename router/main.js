@@ -1486,7 +1486,6 @@ console.log("App: "+appDescription);
   // This method is called when a sequential liquid transfer should be initiated.
   app.post("/transfer", function(req, res1){
     
-    console.log(req.body.del);
     
     var url = "http://localhost:" + ports[req.body.id]["blue"] + "/api/savestate/"; // URL of the application that should be transferred.
     
@@ -1510,7 +1509,7 @@ console.log("App: "+appDescription);
     
   });
 
-  // This function gets called when an external application (for P2P fashion) or the external server (for MAster-slave fashion) 
+  // This function gets called when an external application (for P2P fashion) or the external server (for Master-slave fashion) 
   // wants to sync with an application deployed on this device.
   // This function just relays the message to the application.
   app.post("/sync/", function(req, res){
@@ -1570,7 +1569,7 @@ console.log("App: "+appDescription);
       }
       syncId = body;
 
-      // Is the sources syncID set?      
+      // Is the source's syncID set?      
 
       // Yes - Fork application.
       if(syncId!="-1"){
@@ -1631,7 +1630,7 @@ console.log("App: "+appDescription);
     // It is then packed and sent to the target application.
     var targetDir = "../liquid";
     
-    // Empty the folder in which the transferrable files will be packed.
+    // Remove the folder in which the transferrable files will be packed.
     rimraf(path.resolve(__dirname,targetDir), function(){
       // Make the folder again. This is the easiest way to empty a folder.
       mkdirp(path.resolve(__dirname,targetDir),function(err){
@@ -1653,7 +1652,7 @@ console.log("App: "+appDescription);
 	    console.log("Packing tarball.");
 	    return npmPackPromise(path.resolve(__dirname,targetDir));
 	  }).then(function(pkgFilename){
-	    // Read the tarball.
+	    // Read the tarball to a buffer.
 	    return fsp.readFileAsync(path.resolve(__dirname,pkgFilename));
 	  }).then(function(pkgBuffer){
 	    console.log("Sending tarball.");
