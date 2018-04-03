@@ -267,8 +267,12 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
        }
        return true;
      }
-     // Data are objects, use lodash.
-     return _.isEqual(data1, data2);
+     // Data are objects, compare strings.
+     try{
+       return JSON.stringify(data1) == JSON.stringify(data2);
+     } catch(e){
+       return data1 == data2;
+     }
    }
     
     exApp.use("/api", $router);
