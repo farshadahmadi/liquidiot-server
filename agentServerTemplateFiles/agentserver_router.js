@@ -56,7 +56,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
     // Use Peer-to-peer communication for synchronization.
     var p2p = false;
     // How often the state should be synchronized.
-    var syncInterval = 100;
+    var syncInterval = 1000;
     
     // This function polls the state of the app every syncInterval.
     setInterval(function(){
@@ -68,10 +68,9 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
         var deletions = {};
         for(var key in iotApp){
           // Compare to cache.
-          // DOES NOT WORK FOR ARRAYS YET
 	  if(!myIsEqual(cachedIotApp[key], iotApp[key])){
-	    cachedIotApp[key] = iotApp[key];
-            changes[key] = cachedIotApp[key];
+	    cachedIotApp[key] = _.cloneDeep(iotApp[key]);
+            changes[key] = _.cloneDeep(cachedIotApp[key]);
 	  }
         }
         // Delete from cache if variable is deleted.
@@ -181,7 +180,7 @@ module.exports = function(exApp, port, appDescr, RRUrl, cwd, emitter, deviceInfo
         last_update = req.body["time"];
         for(var key in req.body["data"]){
           iotApp[key] = req.body["data"][key];
-          cachedIotApp[key] = iotApp[key];
+          cachedIotApp[key] = _.cloneDeep(iotApp[key]);
         }
         for(var key in req.body["dels"]){
           delete iotApp[key];
