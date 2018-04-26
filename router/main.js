@@ -1650,10 +1650,11 @@ console.log("App: "+appDescription);
 	  }).then(function(){
 	    // Pack the tarball.
 	    console.log("Packing tarball.");
-	    return npmPackPromise(path.resolve(__dirname,targetDir));
+	    //return npmPackPromise(path.resolve(__dirname,targetDir));
+            return tarpack(path.resolve(__dirname,targetDir));
 	  }).then(function(pkgFilename){
 	    // Read the tarball to a buffer.
-	    return fsp.readFileAsync(path.resolve(__dirname,pkgFilename));
+	    return fsp.readFileAsync(path.resolve(path.resolve(__dirname,targetDir),pkgFilename));
 	  }).then(function(pkgBuffer){
 	    console.log("Sending tarball.");
 	    // Send the tarball.
@@ -1669,8 +1670,8 @@ console.log("App: "+appDescription);
 	      return true;
 	    }
 	  })
-	  .catch(function(){
-	    console.log("Error.");
+	  .catch(function(err){
+	    console.log(err);
 	    res.send(false);
 	    return false;
 	  });
@@ -1740,6 +1741,26 @@ console.log("App: "+appDescription);
 	  resolve(cached);
 	});
       });
+    });
+  }
+
+  // Pack a tarball in a 21st century way.
+  function tarpack(dir){
+    console.log("Started packing.");
+    return new Promise(function(resolve, reject) {
+      var write = require('fs').createWriteStream;
+      var pack = require('tar-pack').pack;
+      console.log("Everything included.");
+      pack(dir)
+        .pipe(write(path.resolve(dir,'package.tgz')))
+        .on('error', function (err) {
+          console.error(err.stack);
+	  return reject(err);
+        })
+        .on('close', function () {
+          console.log('done');
+          resolve('package.tgz');
+        });
     });
   }
   
