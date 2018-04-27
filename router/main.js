@@ -41,6 +41,7 @@ module.exports = function(app, deviceManagerUrl, deviceInfo) {
 
   var templatesDir = "./agentServerTemplateFiles/";
 
+  var time_init = 0;
 
   var deviceUp = false;
 
@@ -1486,7 +1487,7 @@ console.log("App: "+appDescription);
   // This method is called when a sequential liquid transfer should be initiated.
   app.post("/transfer", function(req, res1){
     
-    
+    time_init = Date.now();
     var url = "http://localhost:" + ports[req.body.id]["blue"] + "/api/savestate/"; // URL of the application that should be transferred.
     
     // Create a savefile at the application.
@@ -1524,7 +1525,7 @@ console.log("App: "+appDescription);
   
   // This function gets called when an application on this deivce needs to be cloned.
   app.post("/clone", function(req, res){
-    
+    time_init = Date.now();
     var sourceAppUrl = "http://localhost:" + ports[req.body.id]["blue"] + "/api";
     
     console.log("Cloning started.");
@@ -1660,12 +1661,13 @@ console.log("App: "+appDescription);
 	    // Send the tarball.
 	    return sendPackage(pkgBuffer,url);
 	  }).then(function(){
-	    if(del == false){
+	    console.log("Time do to liquid function: " + ((Date.now() - time_init)/1000));
+            if(del == false){
 	      res.send(true);
 	      return true;
 	    } else{
               // When a migrate happens, the source applicaiton should be deleted.
-	      initiateDelete(aid,null)
+	      initiateDelete(aid,null);
 	      res.send(true);
 	      return true;
 	    }
