@@ -1647,8 +1647,14 @@ console.log("App: "+appDescription);
 	    else return createFile((path.resolve(__dirname,targetDir)+"/liquid-options.json"),JSON.stringify({"syncID":"-1"}),function(){});
 	  }).then(function(){
             // Finally, copy the resources.
-	    return copyResources((path.resolve(__dirname,appDir)+"/resources"),(path.resolve(__dirname,targetDir)+"/resources"));
-	  }).then(function(){
+	   // return copyResources((path.resolve(__dirname,appDir)+"/resources"),(path.resolve(__dirname,targetDir)+"/resources"));
+	 // }).then(function(){
+            try{
+              console.log("Copying resources.");
+              fsExtra.copySync((path.resolve(__dirname,appDir)+"/resources"), (path.resolve(__dirname,targetDir)+"/resources"));
+            }catch(err){
+              console.log("No resources folder.");
+            }
 	    // Pack the tarball.
 	    console.log("Packing tarball.");
 	    //return npmPackPromise(path.resolve(__dirname,targetDir));
@@ -1715,6 +1721,7 @@ console.log("App: "+appDescription);
       if(err){
 	console.log("No resources folder.");
       }
+      console.log("Succesfully copied resources.");
     });
   }
   
